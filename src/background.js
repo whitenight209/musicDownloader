@@ -1,24 +1,53 @@
 'use strict'
 import path from 'path';
-import fs from 'fs';
-import {app, protocol, BrowserWindow, ipcMain} from 'electron'
+import {app, protocol, BrowserWindow, ipcMain, dialog} from 'electron'
 import NodeID3 from 'node-id3';
 import {exec} from 'child_process';
-import {readFilePromise} from '@/util/util';
+import fs from 'fs';
+
+const isBuild = process.env.NODE_ENV === 'production';
+
 import {
     createProtocol,
     installVueDevtools
 } from 'vue-cli-plugin-electron-builder/lib'
-import {getMusicDetail, getImage} from '@/util/api';
+import winston from "winston";
 
+import {getMusicDetail, getImage} from '@/util/api';
 const isDevelopment = process.env.NODE_ENV !== 'production'
+
 const sqlite3 = require('sqlite3').verbose();
+
 // Keep a global reference of the window object, if you don't, the window will
-// be closed automatically when the JavaScript object is garbage collected.
 let win;
 let youtubeWindow;
-const db = new sqlite3.Database(path.resolve(__dirname, 'db/music.db'));
+// be closed automatically when the JavaScript object is garbage collected.
+const getResourcePath = (dir) => {
+    const pathToDbFile =
+        // eslint-disable-next-line
+        isBuild ? path.join(__dirname, `../src/${dir}`) : path.join(__dirname, 'bundled',dir)
+    return pathToDbFile;
+}
+const logPath = getResourcePath('logs');
+if (!fs.existsSync(logPath)) { fs.mkdirSync(logPath); }
 
+const logger = winston.createLogger({
+    level: 'info',
+    format: winston.format.json(),
+    defaultMeta: { service: 'user-service' },
+    transports: [
+        //
+        // - Write all logs with level `error` and below to `error.log`
+        // - Write all logs with level `info` and below to `combined.log`
+        //
+        new winston.transports.File({ filename: 'error.log', level: 'error' }),
+        new winston.transports.File({ filename: 'combined.log', dirname: getResourcePath('logs')})
+    ]
+});
+logger.info('app started');
+
+// const db = new sqlite3.Database(path.resolve(__dirname, ''));
+const db = new sqlite3.Database(getResourcePath('db/music.db'));
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: {secure: true, standard: true}}])
 
@@ -92,9 +121,9 @@ ipcMain.on('3000', (e, musicData) => {
     );
     stmt.run(Object.values(musicData), (err) => {
         if (err) {
-            console.log(err)
+            console.error(err)
         }
-        console.log('insert success')
+        console.info('insert success')
     })
 })
 ipcMain.on('song-db-list', () => {
@@ -111,10 +140,6 @@ ipcMain.on('song-db-list', () => {
     promise.then(data => {
         win.webContents.send('song-db-list', data);
     });
-    // const result = db.each('select * from music', (err, row) => {
-    //     console.log(row)
-    // });
-    // console.log(result)
 });
 
 ipcMain.on('download-song', (event, data) => {
@@ -122,8 +147,8 @@ ipcMain.on('download-song', (event, data) => {
     if (!data.hasOwnProperty('youtubeId')) {
         return;
     }
-    const makeCommand = (yotubeId, duration, fileName) => {
-        return `${path.resolve(__dirname, 'libs/youtube-dl')} --extract-audio --audio-format mp3 --audio-quality 0 --ffmpeg-location ${__dirname}/libs -o '${__dirname}/music/${fileName}.%(ext)s' ${yotubeId} --postprocessor-args "-t ${duration}"`;
+    const makeCommand = (youtubeId, duration, downloadPath, fileName) => {
+        return `${getResourcePath('libs/youtube-dl')} --extract-audio --audio-format mp3 --audio-quality 0 --ffmpeg-location ${getResourcePath('libs')} -o '${downloadPath}/${fileName}.%(ext)s' ${youtubeId} --postprocessor-args "-t ${duration}"`;
     }
     const command = (command) => {
         return new Promise((resolve, reject) => {
@@ -157,10 +182,13 @@ ipcMain.on('download-song', (event, data) => {
              distributor: 'Dreamus' } }
         */
         const fileName = `${bugsData.musicDetail.artist}_${bugsData.musicDetail.songName.replace(" ", "_")}`;
-        const downloadCommand = makeCommand(data.youtubeId, bugsData.musicDetail.duration, fileName);
+        const downloadCommand = makeCommand(data.youtubeId, bugsData.musicDetail.duration, data.downloadPath, data.youtubeId);
+        logger.info(downloadCommand);
         const result = await command(downloadCommand);
         console.log(result);
-        const musicPath = path.resolve(__dirname, 'music', `${fileName}.mp3`);
+        logger.info(result);
+        const musicPath = path.resolve(data.downloadPath, `${data.youtubeId}.mp3`);
+        logger.info(musicPath)
         const imageData = Buffer.from(await getImage(bugsData.musicDetail.imgSrc), 'binary');
         NodeID3.write({
                 title: bugsData.musicDetail.songName,
@@ -169,12 +197,21 @@ ipcMain.on('download-song', (event, data) => {
                 image: imageData
             },
             musicPath);
-
+        const newMusicFile = path.join(data.downloadPath, `${fileName}.mp3`);
+        fs.renameSync(musicPath, newMusicFile);
         // performerInfo: "소속사"
         // composer: "작곡가"
         // genre: 장르 숫자
-    })
+    }).catch(e => logger.info(e))
 });
+
+ipcMain.on('open-file-dialog', () => {
+    dialog.showOpenDialog(win, {
+        properties: ['openDirectory']
+    }, fileName => {
+        win.webContents.send('download-directory', fileName);
+    })
+})
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
     // On macOS it is common for applications and their menu bar

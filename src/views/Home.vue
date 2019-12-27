@@ -19,6 +19,7 @@
             <v-tab-item :key="2">
                 <v-card flat color="basil">
                     <v-card-text>test</v-card-text>
+                    <v-btn @click="changeDownloadDirectory">fileSelect</v-btn>
                     <v-btn @click="getStoredSong">test2</v-btn>
                     <div>
                         <MusicList :items="storedSongList" :item-button-text="message.storedButton" @itemClick="onStoredItemClick"/>
@@ -35,6 +36,7 @@
     import MusicList from "@/components/MusicList";
     import {searchBugsSong} from '@/util/api';
     import { VTextField } from 'vuetify/lib';
+
     export default {
         name: 'home',
         components: {
@@ -44,6 +46,11 @@
         mounted() {
             ipcRenderer.on('song-db-list', (e, data) => {
                 this.storedSongList = data;
+            })
+            ipcRenderer.on('download-directory', (e, data) => {
+                if (data) {
+                    this.downloadDirectory = data[0];
+                }
             })
         },
         data() {
@@ -55,7 +62,8 @@
               message : {
                   addButton: 'add',
                   storedButton: 'download'
-              }
+              },
+              downloadDirectory: ''
           }
         },
         methods: {
@@ -66,11 +74,19 @@
                 ipcRenderer.send('1000', data)
             },
             onStoredItemClick(data) {
+                if (!this.downloadDirectory) {
+                    alert('다운로드 경로를 선택하세요');
+                    return;
+                }
+                data.downloadPath = this.downloadDirectory;
                 ipcRenderer.send('download-song', data)
             },
             getStoredSong() {
                 ipcRenderer.send('song-db-list')
-            }
+            },
+            changeDownloadDirectory() {
+                ipcRenderer.send('open-file-dialog')
+            },
         }
     }
 </script>

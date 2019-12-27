@@ -28,8 +28,7 @@
             window.onresize = () => {
                 webview.style.height = window.innerHeight + 'px'
             }
-            webview.addEventListener('dom-ready', (e) => {
-                console.log(e)
+            webview.addEventListener('dom-ready', () => {
                 webview.executeJavaScript(`
                   const {ipcRenderer} = require('electron')
                   ipcRenderer.on('ping', () => {
@@ -53,11 +52,8 @@
                   });
                   `
                 );
-                webview.openDevTools()
-                webview.addEventListener('ipc-message', (event) => {
-                    console.log(event.channel)
-                    // Prints "pong"
-                })
+                // webview.openDevTools()
+
 
             })
         },

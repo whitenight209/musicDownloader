@@ -1,6 +1,12 @@
 import axios from 'axios';
 import cheerio from 'cheerio';
 import {stripString} from "@/util/util";
+import { setNamespaces, setLevel, createLogger } from '@ekino/logger';
+setNamespaces('api:*');
+setLevel('error');
+
+const logger = createLogger('api:testing');
+
 
 export const getImage = async (url) => {
     return await axios.request({
@@ -35,7 +41,7 @@ export const searchBugsSong = (keyword, page_number = 1) => {
             songList.push({key, songName, artistName, albumnName, albumnCoverUrl})
         });
         return songList;
-    }).catch(e => console.log(e))
+    }).catch(e => logger.error(e))
 }
 
 export const getMusicDetail = (musicId) => {
@@ -78,7 +84,7 @@ export const getMusicDetail = (musicId) => {
                     const albumCoverUrl = $('div.basicInfo > div > ul > li > a > img').first();
                     if (albumCoverUrl) {
                         musicDetail.imgSrc = albumCoverUrl.attr('src').split('?')[0].replace('/200/', '/500/');
-                        console.log(musicDetail)
+                        logger.error(musicDetail)
                     }
                     musicDetail.bugsSongId = musicId;
                 }
@@ -87,7 +93,7 @@ export const getMusicDetail = (musicId) => {
         }).then( async musicDetail => {
             const albumDetail = await getAlbumDetail(musicDetail.albumHref);
             return {musicDetail, albumDetail};
-        }).catch( err => console.log(err))
+        }).catch( err => logger.error(err))
 };
 export const getAlbumDetail = async (albumHref) => {
     return await axios.get(albumHref)
