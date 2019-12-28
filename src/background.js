@@ -80,13 +80,14 @@ function createWindow() {
 }
 
 const createYoutubeWindow = (data) => {
+    console.log('create youtube Window')
     if (youtubeWindow) {
         youtubeWindow.focus();
         youtubeWindow.webContents.send('2000', data);
         return;
     }
     youtubeWindow = new BrowserWindow({
-        width: 400, height: 600, webPreferences: {
+        width: 800, height: 600, webPreferences: {
             nodeIntegration: true,
             webSecurity: false,
             webviewTag: true
@@ -105,10 +106,20 @@ const createYoutubeWindow = (data) => {
     youtubeWindow.on('closed', () => {
         youtubeWindow = null
     })
-    youtubeWindow.webContents.on('did-finish-load', () => {
+    youtubeWindow.webContents.once('dom-ready', () => {
+        console.log('send data');
         youtubeWindow.webContents.send('2000', data);
-    })
+    });
+    // youtubeWindow.webContents.on('did-finish-load', () => {
+    //
+    // })
 };
+
+const notifyToMainWindow = (notifyData) => {
+    if(win) {
+        win.webContents.send('10000', notifyData);
+    }
+}
 
 ipcMain.on('1000', (e, data) => {
     createYoutubeWindow(data);
@@ -122,9 +133,13 @@ ipcMain.on('3000', (e, musicData) => {
     stmt.run(Object.values(musicData), (err) => {
         if (err) {
             console.error(err)
+            youtubeWindow.webContents.send('3000', {type: -1, message: err});
+            return;
         }
         console.info('insert success')
+        youtubeWindow.webContents.send('3000', {type: 0, message:'insert success'});
     })
+
 })
 ipcMain.on('song-db-list', () => {
     const promise = new Promise((resolve, reject) => {
@@ -143,10 +158,11 @@ ipcMain.on('song-db-list', () => {
 });
 
 ipcMain.on('download-song', (event, data) => {
-
+    notifyToMainWindow({type: 'initCount', data: 7});
     if (!data.hasOwnProperty('youtubeId')) {
         return;
     }
+    notifyToMainWindow({type: 'progress', data: 'make youtube-dl command'});
     const makeCommand = (youtubeId, duration, downloadPath, fileName) => {
         return `${getResourcePath('libs/youtube-dl')} --extract-audio --audio-format mp3 --audio-quality 0 --ffmpeg-location ${getResourcePath('libs')} -o '${downloadPath}/${fileName}.%(ext)s' ${youtubeId} --postprocessor-args "-t ${duration}"`;
     }
@@ -159,6 +175,7 @@ ipcMain.on('download-song', (event, data) => {
             });
         });
     }
+    notifyToMainWindow({type: 'progress', data: 'get music detail data'});
     getMusicDetail(data.key).then(async bugsData => {
         /*
         * { musicDetail:
@@ -182,14 +199,15 @@ ipcMain.on('download-song', (event, data) => {
              distributor: 'Dreamus' } }
         */
         const fileName = `${bugsData.musicDetail.artist}_${bugsData.musicDetail.songName.replace(" ", "_")}`;
+        notifyToMainWindow({type: 'progress', data: 'make youtube-dl command'});
         const downloadCommand = makeCommand(data.youtubeId, bugsData.musicDetail.duration, data.downloadPath, data.youtubeId);
         logger.info(downloadCommand);
-        const result = await command(downloadCommand);
-        console.log(result);
-        logger.info(result);
+        notifyToMainWindow({type: 'progress', data: 'execute youtube-dl command'});
+        await command(downloadCommand);
         const musicPath = path.resolve(data.downloadPath, `${data.youtubeId}.mp3`);
         logger.info(musicPath)
         const imageData = Buffer.from(await getImage(bugsData.musicDetail.imgSrc), 'binary');
+        notifyToMainWindow({type: 'progress', data: 'set id3 metaData'});
         NodeID3.write({
                 title: bugsData.musicDetail.songName,
                 artist: bugsData.musicDetail.artist,
@@ -198,11 +216,16 @@ ipcMain.on('download-song', (event, data) => {
             },
             musicPath);
         const newMusicFile = path.join(data.downloadPath, `${fileName}.mp3`);
+        notifyToMainWindow({type: 'progress', data: 'rename music file'});
         fs.renameSync(musicPath, newMusicFile);
+        notifyToMainWindow({type: 'progress', data: 'music download success'});
         // performerInfo: "소속사"
         // composer: "작곡가"
         // genre: 장르 숫자
-    }).catch(e => logger.info(e))
+    }).catch(e => {
+        notifyToMainWindow({type: 'error', data: 'music download failed'});
+        logger.info(e)
+    })
 });
 
 ipcMain.on('open-file-dialog', () => {

@@ -32,6 +32,7 @@ export const searchBugsSong = (keyword, page_number = 1) => {
     }).then(res => {
         const $ = cheerio.load(res.data);
         const songList = [];
+        const pageList = [];
         $('table.trackList tbody tr').each((index, item) => {
             const key = $(item).attr('trackid');
             const songName = $(item).find('th > p.title > a').first().attr('title');
@@ -40,7 +41,20 @@ export const searchBugsSong = (keyword, page_number = 1) => {
             const albumnCoverUrl = $(item).find('td > a.thumbnail > img').first().attr('src').replace('/50/', '/300/');
             songList.push({key, songName, artistName, albumnName, albumnCoverUrl})
         });
-        return songList;
+        $('div.paging > a').each( (index, item) => {
+            let isSelected = false;
+            const pageHref = $(item).attr('href');
+            const regex = new RegExp('[0-9]+');
+            const result = pageHref.match(regex)[0];
+            const classNameList = $(item).attr('class').split(/\s+/);
+            if (classNameList) {
+                if (classNameList[0] === 'selected') {
+                    isSelected = true;
+                }
+            }
+            pageList.push({index: result, isSelected})
+        });
+        return {songList, pageList};
     }).catch(e => logger.error(e))
 }
 
