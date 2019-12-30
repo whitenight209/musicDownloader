@@ -37,9 +37,9 @@ export const searchBugsSong = (keyword, page_number = 1) => {
             const key = $(item).attr('trackid');
             const songName = $(item).find('th > p.title > a').first().attr('title');
             const artistName = $(item).find("td > p.artist > a").first().text();
-            const albumnName = $(item).find('td > .album').first().text();
-            const albumnCoverUrl = $(item).find('td > a.thumbnail > img').first().attr('src').replace('/50/', '/300/');
-            songList.push({key, songName, artistName, albumnName, albumnCoverUrl})
+            const albumName = $(item).find('td > .album').first().text();
+            const albumCoverUrl = $(item).find('td > a.thumbnail > img').first().attr('src').replace('/50/', '/300/');
+            songList.push({key, songName, artistName, albumName, albumCoverUrl})
         });
         $('div.paging > a').each( (index, item) => {
             let isSelected = false;
@@ -150,3 +150,21 @@ export const getAlbumDetail = async (albumHref) => {
             return albumData;
         })
 };
+export const getBugsTop100 = () => {
+    const url = 'https://music.bugs.co.kr/chart/track/realtime/total';
+    return axios.get(url).then(res => res.data).then(data => {
+        const $ = cheerio.load(data);
+        const musicList = [];
+        $('#CHARTrealtime > table > tbody > tr').each( (index, item) => {
+            const musicId = $(item).attr('trackid');
+            const albumId = $(item).attr('albumid');
+            const ranking = $(item).find('td:nth-child(4) > div > strong').text();
+            const albumCoverUrl = $(item).find('td:nth-child(5) > a > img').attr('src');
+            const songName = $(item).find('th > p > a').text();
+            const artistName = $(item).find('td:nth-child(8) > p > a').text();
+            const albumName = $(item).find('td:nth-child(9) > a').text();
+            musicList.push({ranking, albumCoverUrl, songName, artistName, albumName, key:musicId, albumId});
+        });
+        return musicList;
+    })
+}

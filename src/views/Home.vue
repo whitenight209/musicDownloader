@@ -3,12 +3,20 @@
         <div class="mx-4">
             <v-tabs v-model="tab">
                 <v-tab :key="0">
+                    벅스 Top 100
+                </v-tab>
+                <v-tab :key="1">
                     벅스
                 </v-tab>
-                <v-tab :key="1">저장된 음악</v-tab>
+                <v-tab :key="2">저장된 음악</v-tab>
             </v-tabs>
             <v-tabs-items v-model="tab">
                 <v-tab-item :key="1">
+                    <div>
+                        <MusicList :items="top100List" :item-button-text="message.addButton" @itemClick="onItemClick"/>
+                    </div>
+                </v-tab-item>
+                <v-tab-item :key="2">
                     <div>
                         <VTextField class="d-inline-block pr-3" style="width: 92%;" v-model="searchParam"></VTextField>
                         <v-btn class="d-inline-block" style="width: 8%; height: 34px !important;" @click="searchSong">search</v-btn>
@@ -23,10 +31,14 @@
                         <Pagination :page-list="pageList"  @click="onPaginationClick"/>
                     </div>
                 </v-tab-item>
-                <v-tab-item :key="2">
+                <v-tab-item :key="3">
                     <v-card flat color="basil">
                         <br/>
-                        <v-btn @click="changeDownloadDirectory">fileSelect</v-btn>
+                        <div>
+                            <v-btn small @click="changeDownloadDirectory">directory</v-btn>
+                            directory : {{downloadDirectory}}
+                        </div>
+                        <br/>
                         <v-progress-linear
                                 :buffer-value="100"
                                 :height="4"
@@ -49,7 +61,7 @@
     import {ipcRenderer} from 'electron';
     import MusicList from "@/components/MusicList";
     import Pagination from "@/components/Pagination";
-    import {searchBugsSong} from '@/util/api';
+    import {searchBugsSong, getBugsTop100} from '@/util/api';
     import { VTextField } from 'vuetify/lib';
 
     export default {
@@ -69,12 +81,19 @@
                 }
             })
             ipcRenderer.on('10000', (e, data) => {
+                if (data.type == 'initCount') {
+                    this.count = 0;
+                }
                 this[data.type] = data.data;
             })
+            if(!this.top100List.length) {
+                this.getBugsMusicTop100();
+            }
         },
         data() {
           return {
               searchParam: '고백',
+              top100List: [],
               songList: [],
               pageList: [],
               tab: 0,
@@ -99,8 +118,12 @@
               this.count += 1;
           },
           tab(newKey) {
-              if(newKey === 1 ) {
+              if(newKey === 2 ) {
                   this.getStoredSong();
+              } else if (newKey === 0 ) {
+                  if(!this.top100List.length) {
+                      this.getBugsMusicTop100();
+                  }
               }
           }
         },
@@ -131,6 +154,11 @@
                 const { songList, pageList } = await searchBugsSong(this.searchParam, data);
                 this.songList = songList;
                 this.pageList = pageList;
+            },
+            async getBugsMusicTop100() {
+                const top100SongList = await getBugsTop100();
+                this.top100List = top100SongList;
+                console.log(typeof this.top100List)
             }
         }
     }

@@ -125,12 +125,15 @@ ipcMain.on('1000', (e, data) => {
     createYoutubeWindow(data);
 })
 ipcMain.on('3000', (e, musicData) => {
+    const {albumCoverUrl, albumName, artistName, key, songName, youtubeId} = musicData;
+    console.log(musicData)
+    console.log([albumCoverUrl, albumName, artistName, key, songName, youtubeId]);
     const stmt = db.prepare(
         `insert into 
         music (album_cover, album_name, artist_name, bugs_id, name, youtube_id)
          values(?, ?, ?, ?, ?, ?)`
     );
-    stmt.run(Object.values(musicData), (err) => {
+    stmt.run([albumCoverUrl, albumName, artistName, key, songName, youtubeId], (err) => {
         if (err) {
             console.error(err)
             youtubeWindow.webContents.send('3000', {type: -1, message: err});
@@ -144,7 +147,7 @@ ipcMain.on('3000', (e, musicData) => {
 ipcMain.on('song-db-list', () => {
     const promise = new Promise((resolve, reject) => {
         db.all(`select 
-         album_cover as albumnCoverUrl, album_name, artist_name as artistName, bugs_id as key, name as songName, youtube_id as youtubeId
+         album_cover as albumCoverUrl, album_name, artist_name as artistName, bugs_id as key, name as songName, youtube_id as youtubeId
          from music`, (err, rows) => {
             if (err) {
                 reject(err);

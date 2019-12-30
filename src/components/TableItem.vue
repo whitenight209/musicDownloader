@@ -2,7 +2,7 @@
     <div class="music-item">
         <v-card class="music-card" outlined>
             <v-card-text class="music-card-text">
-                <img class="album-art" :src="data.albumnCoverUrl"/>
+                <img class="album-art" :src="data.albumCoverUrl"/>
                 <div class="inline-block v-align-top">
                     <p class="info-item music-title">{{data.songName}}</p>
                     <p class="info-item artist-name">{{data.artistName}}</p>

@@ -46,8 +46,9 @@
         mounted() {
             const webview = document.getElementById('youtubePlayer');
             window.onresize = () => {
-                webview.style.height = window.innerHeight + 'px'
+                webview.style.height = (window.innerHeight - 60) + 'px'
             }
+            webview.style.height = (window.innerHeight - 60) + 'px'
             // webview.addEventListener('did-finish-load', (e) => {
             //     console.log(e);
             // });
