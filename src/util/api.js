@@ -1,6 +1,12 @@
 import axios from 'axios';
 import cheerio from 'cheerio';
 import {stripString} from "@/util/util";
+import { setNamespaces, setLevel, createLogger } from '@ekino/logger';
+setNamespaces('api:*');
+setLevel('error');
+
+const logger = createLogger('api:testing');
+
 
 export const getImage = async (url) => {
     return await axios.request({
@@ -26,16 +32,30 @@ export const searchBugsSong = (keyword, page_number = 1) => {
     }).then(res => {
         const $ = cheerio.load(res.data);
         const songList = [];
+        const pageList = [];
         $('table.trackList tbody tr').each((index, item) => {
             const key = $(item).attr('trackid');
             const songName = $(item).find('th > p.title > a').first().attr('title');
             const artistName = $(item).find("td > p.artist > a").first().text();
-            const albumnName = $(item).find('td > .album').first().text();
-            const albumnCoverUrl = $(item).find('td > a.thumbnail > img').first().attr('src').replace('/50/', '/300/');
-            songList.push({key, songName, artistName, albumnName, albumnCoverUrl})
+            const albumName = $(item).find('td > .album').first().text();
+            const albumCoverUrl = $(item).find('td > a.thumbnail > img').first().attr('src').replace('/50/', '/300/');
+            songList.push({key, songName, artistName, albumName, albumCoverUrl})
         });
-        return songList;
-    }).catch(e => console.log(e))
+        $('div.paging > a').each( (index, item) => {
+            let isSelected = false;
+            const pageHref = $(item).attr('href');
+            const regex = new RegExp('[0-9]+');
+            const result = pageHref.match(regex)[0];
+            const classNameList = $(item).attr('class').split(/\s+/);
+            if (classNameList) {
+                if (classNameList[0] === 'selected') {
+                    isSelected = true;
+                }
+            }
+            pageList.push({index: result, isSelected})
+        });
+        return {songList, pageList};
+    }).catch(e => logger.error(e))
 }
 
 export const getMusicDetail = (musicId) => {
@@ -78,7 +98,7 @@ export const getMusicDetail = (musicId) => {
                     const albumCoverUrl = $('div.basicInfo > div > ul > li > a > img').first();
                     if (albumCoverUrl) {
                         musicDetail.imgSrc = albumCoverUrl.attr('src').split('?')[0].replace('/200/', '/500/');
-                        console.log(musicDetail)
+                        logger.error(musicDetail)
                     }
                     musicDetail.bugsSongId = musicId;
                 }
@@ -87,7 +107,7 @@ export const getMusicDetail = (musicId) => {
         }).then( async musicDetail => {
             const albumDetail = await getAlbumDetail(musicDetail.albumHref);
             return {musicDetail, albumDetail};
-        }).catch( err => console.log(err))
+        }).catch( err => logger.error(err))
 };
 export const getAlbumDetail = async (albumHref) => {
     return await axios.get(albumHref)
@@ -130,3 +150,21 @@ export const getAlbumDetail = async (albumHref) => {
             return albumData;
         })
 };
+export const getBugsTop100 = () => {
+    const url = 'https://music.bugs.co.kr/chart/track/realtime/total';
+    return axios.get(url).then(res => res.data).then(data => {
+        const $ = cheerio.load(data);
+        const musicList = [];
+        $('#CHARTrealtime > table > tbody > tr').each( (index, item) => {
+            const musicId = $(item).attr('trackid');
+            const albumId = $(item).attr('albumid');
+            const ranking = $(item).find('td:nth-child(4) > div > strong').text();
+            const albumCoverUrl = $(item).find('td:nth-child(5) > a > img').attr('src');
+            const songName = $(item).find('th > p > a').text();
+            const artistName = $(item).find('td:nth-child(8) > p > a').text();
+            const albumName = $(item).find('td:nth-child(9) > a').text();
+            musicList.push({ranking, albumCoverUrl, songName, artistName, albumName, key:musicId, albumId});
+        });
+        return musicList;
+    })
+}

@@ -1,24 +1,53 @@
 'use strict'
 import path from 'path';
-import fs from 'fs';
-import {app, protocol, BrowserWindow, ipcMain} from 'electron'
+import {app, protocol, BrowserWindow, ipcMain, dialog} from 'electron'
 import NodeID3 from 'node-id3';
 import {exec} from 'child_process';
-import {readFilePromise} from '@/util/util';
+import fs from 'fs';
+
+const isBuild = process.env.NODE_ENV === 'production';
+
 import {
     createProtocol,
     installVueDevtools
 } from 'vue-cli-plugin-electron-builder/lib'
-import {getMusicDetail, getImage} from '@/util/api';
+import winston from "winston";
 
+import {getMusicDetail, getImage} from '@/util/api';
 const isDevelopment = process.env.NODE_ENV !== 'production'
+
 const sqlite3 = require('sqlite3').verbose();
+
 // Keep a global reference of the window object, if you don't, the window will
-// be closed automatically when the JavaScript object is garbage collected.
 let win;
 let youtubeWindow;
-const db = new sqlite3.Database(path.resolve(__dirname, 'db/music.db'));
+// be closed automatically when the JavaScript object is garbage collected.
+const getResourcePath = (dir) => {
+    const pathToDbFile =
+        // eslint-disable-next-line
+        isBuild ? path.join(__dirname, `../src/${dir}`) : path.join(__dirname, 'bundled',dir)
+    return pathToDbFile;
+}
+const logPath = getResourcePath('logs');
+if (!fs.existsSync(logPath)) { fs.mkdirSync(logPath); }
 
+const logger = winston.createLogger({
+    level: 'info',
+    format: winston.format.json(),
+    defaultMeta: { service: 'user-service' },
+    transports: [
+        //
+        // - Write all logs with level `error` and below to `error.log`
+        // - Write all logs with level `info` and below to `combined.log`
+        //
+        new winston.transports.File({ filename: 'error.log', level: 'error' }),
+        new winston.transports.File({ filename: 'combined.log', dirname: getResourcePath('logs')})
+    ]
+});
+logger.info('app started');
+
+// const db = new sqlite3.Database(path.resolve(__dirname, ''));
+const db = new sqlite3.Database(getResourcePath('db/music.db'));
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: {secure: true, standard: true}}])
 
@@ -51,13 +80,14 @@ function createWindow() {
 }
 
 const createYoutubeWindow = (data) => {
+    console.log('create youtube Window')
     if (youtubeWindow) {
         youtubeWindow.focus();
         youtubeWindow.webContents.send('2000', data);
         return;
     }
     youtubeWindow = new BrowserWindow({
-        width: 400, height: 600, webPreferences: {
+        width: 800, height: 600, webPreferences: {
             nodeIntegration: true,
             webSecurity: false,
             webviewTag: true
@@ -76,31 +106,48 @@ const createYoutubeWindow = (data) => {
     youtubeWindow.on('closed', () => {
         youtubeWindow = null
     })
-    youtubeWindow.webContents.on('did-finish-load', () => {
+    youtubeWindow.webContents.once('dom-ready', () => {
+        console.log('send data');
         youtubeWindow.webContents.send('2000', data);
-    })
+    });
+    // youtubeWindow.webContents.on('did-finish-load', () => {
+    //
+    // })
 };
+
+const notifyToMainWindow = (notifyData) => {
+    if(win) {
+        win.webContents.send('10000', notifyData);
+    }
+}
 
 ipcMain.on('1000', (e, data) => {
     createYoutubeWindow(data);
 })
 ipcMain.on('3000', (e, musicData) => {
+    const {albumCoverUrl, albumName, artistName, key, songName, youtubeId} = musicData;
+    console.log(musicData)
+    console.log([albumCoverUrl, albumName, artistName, key, songName, youtubeId]);
     const stmt = db.prepare(
         `insert into 
         music (album_cover, album_name, artist_name, bugs_id, name, youtube_id)
          values(?, ?, ?, ?, ?, ?)`
     );
-    stmt.run(Object.values(musicData), (err) => {
+    stmt.run([albumCoverUrl, albumName, artistName, key, songName, youtubeId], (err) => {
         if (err) {
-            console.log(err)
+            console.error(err)
+            youtubeWindow.webContents.send('3000', {type: -1, message: err});
+            return;
         }
-        console.log('insert success')
+        console.info('insert success')
+        youtubeWindow.webContents.send('3000', {type: 0, message:'insert success'});
     })
+
 })
 ipcMain.on('song-db-list', () => {
     const promise = new Promise((resolve, reject) => {
         db.all(`select 
-         album_cover as albumnCoverUrl, album_name, artist_name as artistName, bugs_id as key, name as songName, youtube_id as youtubeId
+         album_cover as albumCoverUrl, album_name, artist_name as artistName, bugs_id as key, name as songName, youtube_id as youtubeId
          from music`, (err, rows) => {
             if (err) {
                 reject(err);
@@ -111,19 +158,16 @@ ipcMain.on('song-db-list', () => {
     promise.then(data => {
         win.webContents.send('song-db-list', data);
     });
-    // const result = db.each('select * from music', (err, row) => {
-    //     console.log(row)
-    // });
-    // console.log(result)
 });
 
 ipcMain.on('download-song', (event, data) => {
-
+    notifyToMainWindow({type: 'initCount', data: 7});
     if (!data.hasOwnProperty('youtubeId')) {
         return;
     }
-    const makeCommand = (yotubeId, duration, fileName) => {
-        return `${path.resolve(__dirname, 'libs/youtube-dl')} --extract-audio --audio-format mp3 --audio-quality 0 --ffmpeg-location ${__dirname}/libs -o '${__dirname}/music/${fileName}.%(ext)s' ${yotubeId} --postprocessor-args "-t ${duration}"`;
+    notifyToMainWindow({type: 'progress', data: 'make youtube-dl command'});
+    const makeCommand = (youtubeId, duration, downloadPath, fileName) => {
+        return `${getResourcePath('libs/youtube-dl')} --extract-audio --audio-format mp3 --audio-quality 0 --ffmpeg-location ${getResourcePath('libs')} -o '${downloadPath}/${fileName}.%(ext)s' ${youtubeId} --postprocessor-args "-t ${duration}"`;
     }
     const command = (command) => {
         return new Promise((resolve, reject) => {
@@ -134,6 +178,7 @@ ipcMain.on('download-song', (event, data) => {
             });
         });
     }
+    notifyToMainWindow({type: 'progress', data: 'get music detail data'});
     getMusicDetail(data.key).then(async bugsData => {
         /*
         * { musicDetail:
@@ -157,11 +202,15 @@ ipcMain.on('download-song', (event, data) => {
              distributor: 'Dreamus' } }
         */
         const fileName = `${bugsData.musicDetail.artist}_${bugsData.musicDetail.songName.replace(" ", "_")}`;
-        const downloadCommand = makeCommand(data.youtubeId, bugsData.musicDetail.duration, fileName);
-        const result = await command(downloadCommand);
-        console.log(result);
-        const musicPath = path.resolve(__dirname, 'music', `${fileName}.mp3`);
+        notifyToMainWindow({type: 'progress', data: 'make youtube-dl command'});
+        const downloadCommand = makeCommand(data.youtubeId, bugsData.musicDetail.duration, data.downloadPath, data.youtubeId);
+        logger.info(downloadCommand);
+        notifyToMainWindow({type: 'progress', data: 'execute youtube-dl command'});
+        await command(downloadCommand);
+        const musicPath = path.resolve(data.downloadPath, `${data.youtubeId}.mp3`);
+        logger.info(musicPath)
         const imageData = Buffer.from(await getImage(bugsData.musicDetail.imgSrc), 'binary');
+        notifyToMainWindow({type: 'progress', data: 'set id3 metaData'});
         NodeID3.write({
                 title: bugsData.musicDetail.songName,
                 artist: bugsData.musicDetail.artist,
@@ -169,12 +218,26 @@ ipcMain.on('download-song', (event, data) => {
                 image: imageData
             },
             musicPath);
-
+        const newMusicFile = path.join(data.downloadPath, `${fileName}.mp3`);
+        notifyToMainWindow({type: 'progress', data: 'rename music file'});
+        fs.renameSync(musicPath, newMusicFile);
+        notifyToMainWindow({type: 'progress', data: 'music download success'});
         // performerInfo: "소속사"
         // composer: "작곡가"
         // genre: 장르 숫자
+    }).catch(e => {
+        notifyToMainWindow({type: 'error', data: 'music download failed'});
+        logger.info(e)
     })
 });
+
+ipcMain.on('open-file-dialog', () => {
+    dialog.showOpenDialog(win, {
+        properties: ['openDirectory']
+    }, fileName => {
+        win.webContents.send('download-directory', fileName);
+    })
+})
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
     // On macOS it is common for applications and their menu bar
