@@ -230,14 +230,6 @@ ipcMain.on('download-song', (event, data) => {
         logger.info(e)
     })
 });
-
-ipcMain.on('open-file-dialog', () => {
-    dialog.showOpenDialog(win, {
-        properties: ['openDirectory']
-    }, fileName => {
-        win.webContents.send('download-directory', fileName);
-    })
-})
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
     // On macOS it is common for applications and their menu bar

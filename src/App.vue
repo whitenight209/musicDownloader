@@ -1,10 +1,6 @@
 <template>
   <div id="app">
-    <v-app>
-      <v-content>
-          <router-view/>
-      </v-content>
-    </v-app>
+    <router-view/>
   </div>
 </template>
 
