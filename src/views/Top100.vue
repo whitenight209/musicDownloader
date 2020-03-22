@@ -1,22 +1,20 @@
 <template>
     <div>
-        <div>{{count}}</div>
-        <button @click="increment">increment</button>
+        {{top100List}}
+        <button @click="getTop100MusicList">increment</button>
     </div>
 </template>
 
 <script>
-    import { mapGetters } from 'vuex'
+    import { mapGetters, mapActions } from 'vuex'
 
     export default {
         name: "Top100",
         methods: {
-            increment() {
-                this.$store.commit('increment');
-            }
+            ...mapActions(['getTop100MusicList'])
         },
         computed: {
-            ...mapGetters({count: 'getCount'})
+            ...mapGetters({top100List: 'getTop100'})
         }
 
     }
