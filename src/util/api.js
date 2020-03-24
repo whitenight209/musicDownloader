@@ -159,7 +159,7 @@ export const getBugsTop100 = () => {
             const musicId = $(item).attr('trackid');
             const albumId = $(item).attr('albumid');
             const ranking = $(item).find('td:nth-child(4) > div > strong').text();
-            const albumCoverUrl = $(item).find('td:nth-child(5) > a > img').attr('src');
+            const albumCoverUrl = $(item).find('td:nth-child(5) > a > img').attr('src').replace('/50/', '/300/');
             const songName = $(item).find('th > p > a').text();
             const artistName = $(item).find('td:nth-child(8) > p > a').text();
             const albumName = $(item).find('td:nth-child(9) > a').text();
