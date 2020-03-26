@@ -1,6 +1,6 @@
 'use strict'
 import path from 'path';
-import {app, protocol, BrowserWindow, ipcMain, dialog} from 'electron'
+import {app, protocol, BrowserWindow, ipcMain} from 'electron'
 import NodeID3 from 'node-id3';
 import {exec} from 'child_process';
 import fs from 'fs';

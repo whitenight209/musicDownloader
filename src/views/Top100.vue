@@ -12,7 +12,7 @@
 <script>
     import { ipcRenderer } from 'electron';
     import { mapGetters, mapActions } from 'vuex'
-    import CTable from "../components/CTable";
+    import CTable from "@/components/CTable";
 
     export default {
         name: "Top100",
