@@ -53,7 +53,19 @@
             //     console.log(e);
             // });
             webview.addEventListener('did-navigate-in-page', e => {
-                console.log(e)
+                console.log(e.url)
+                // webview.executeJavaScript(
+                //     `
+                //     if(!testButton) {
+                //         let testButton = document.createElement('button');
+                //         testButton.innerHTML = '박철호'
+                //     }
+                //     if(!container) {
+                //         const container = document.querySelector('#container');
+                //     }
+                //     container.appendChild(testButton);
+                //     `
+                // )
             })
             webview.addEventListener('dom-ready', () => {
                 webview.executeJavaScript(`
@@ -83,7 +95,7 @@
                   });
                   `
                 );
-                // webview.openDevTools()
+                webview.openDevTools()
             })
         },
         methods: {

@@ -10,8 +10,8 @@
                     </th>
                 </thead>
                 <tbody>
-                    <tr @click="rowClick(row.key)" :key="index" v-for="(row, index) in items">
-                        <td :key="header_index" v-for="(header,header_index) in headers">
+                    <tr class="table-item" @click="rowClick(row)" :key="index" v-for="(row, index) in items">
+                        <td  :key="header_index" v-for="(header,header_index) in headers">
                             <template v-if="header.type === 'image'">
                                 <img
                                         :style="{
@@ -22,7 +22,7 @@
                                 />
                             </template>
                             <template v-else>
-                                <div :style="{'font-size': fontSize}">
+                                <div :style="{'font-size': fontSize, 'text-align': !!header.align ? header.align: 'left'}">
                                     {{row[header.value]}}
                                 </div>
                             </template>
@@ -56,13 +56,27 @@
             }
         },
         methods: {
-            rowClick(e) {
-                console.log(e);
+            rowClick(row) {
+                this.$emit('click', row);
             }
         }
     }
 </script>
 
 <style scoped>
+    .table-item:hover {
+        background-color: antiquewhite;
+        cursor: pointer;
+    }
+    table {
+        border-spacing: 0px 0px;
+        border-collapse:collapse;
+    }
+    th, td {
+        border: 1px solid gray;
+        border-collapse:collapse;
+    }
+    td {
 
+    }
 </style>
