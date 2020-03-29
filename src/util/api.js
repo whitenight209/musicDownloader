@@ -98,7 +98,7 @@ export const getMusicDetail = (musicId) => {
                     const albumCoverUrl = $('div.basicInfo > div > ul > li > a > img').first();
                     if (albumCoverUrl) {
                         musicDetail.imgSrc = albumCoverUrl.attr('src').split('?')[0].replace('/200/', '/500/');
-                        logger.error(musicDetail)
+                        // logger.error(musicDetail)
                     }
                     musicDetail.bugsSongId = musicId;
                 }

@@ -1,5 +1,4 @@
 import fs from 'fs';
-
 export const stripString = (string) => {
     return ( string || '' ).replace( /^\s+|\s+$/g, '' );
 }

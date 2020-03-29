@@ -6,7 +6,7 @@
                         {{musicDetailData.musicDetail.duration}}
         </div>
         <div style="width:100%; height:100%">
-            <v-btn @click="emit">선택</v-btn>
+            <button @click="emit">선택</button>
             <webview id="youtubePlayer" src="https://www.youtube.com/" autosize="on" nodeIntegration></webview>
         </div>
     </div>

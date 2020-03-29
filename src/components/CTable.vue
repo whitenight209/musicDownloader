@@ -3,29 +3,37 @@
         <div>
             <table style="width: 100%">
                 <thead>
-                    <th :key="index" v-for="(header, index) in headers">
-                        <div :style="{'font-size': headerFontSize}">
+                    <th v-if="showSelect" width="10px">
+                        <input v-if="showSelectAll" @click="onSelectAll" type="checkbox"/>
+                    </th>
+                    <th :key="index" v-for="(header, index) in headers" :style="{'font-size':
+                        headerFontSize,
+                        width: !!header.width ? header.width + 'px'  : ''}"
+                    >
+                        <div >
                             {{header.text}}
                         </div>
                     </th>
                 </thead>
                 <tbody>
                     <tr class="table-item" @click="rowClick(row)" :key="index" v-for="(row, index) in items">
+                        <td v-if="showSelect">
+                            <input v-model="selected[index]" type="checkbox"/>
+                        </td>
                         <td  :key="header_index" v-for="(header,header_index) in headers">
-                            <template v-if="header.type === 'image'">
-                                <img
+                                <img  v-if="header.type === 'image'"
                                         :style="{
                                             width : !!header.width ? header.width + 'px' : '40px',
                                             height : !!header.height ? header.height + 'px': '40px',
                                         }"
                                         :src="row[header.value]"
                                 />
-                            </template>
-                            <template v-else>
-                                <div :style="{'font-size': fontSize, 'text-align': !!header.align ? header.align: 'left'}">
+                                <button v-else-if="header.type === 'button'" @click="header.click(row)">
+                                    {{header.text}}
+                                </button>
+                                <div v-else :style="{'font-size': fontSize, 'text-align': !!header.align ? header.align: 'left'}">
                                     {{row[header.value]}}
                                 </div>
-                            </template>
                         </td>
                     </tr>
                 </tbody>
@@ -37,6 +45,16 @@
 <script>
     export default {
         name: "CTable",
+        created() {
+          if(this.showSelect) {
+              this.selected = Array(this.items.length).fill(false);
+          }
+        },
+        data () {
+            return {
+                selected : []
+            }
+        },
         props: {
             items: {
                 type: Array,
@@ -53,11 +71,23 @@
             headerFontSize: {
                 type: String,
                 default: '17px'
+            },
+            showSelect: {
+                type: Boolean,
+                default: false
+            },
+            showSelectAll: {
+                type: Boolean,
+                default: false
             }
         },
         methods: {
             rowClick(row) {
                 this.$emit('click', row);
+            },
+            onSelectAll(e) {
+                const selected = e.target.checked;
+                this.selected = Array(this.items.length).fill(selected);
             }
         }
     }

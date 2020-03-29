@@ -1,10 +1,10 @@
 'use strict'
 import path from 'path';
-import {app, protocol, BrowserWindow, ipcMain} from 'electron'
+import {app, protocol, BrowserWindow, ipcMain, dialog} from 'electron'
 import NodeID3 from 'node-id3';
 import {exec} from 'child_process';
 import fs from 'fs';
-
+import {YOUTUBE_URL} from "@/util/properties";
 const isBuild = process.env.NODE_ENV === 'production';
 
 import {
@@ -144,6 +144,15 @@ ipcMain.on('3000', (e, musicData) => {
     })
 
 })
+ipcMain.on('openFileDialog', async () => {
+    const result = await dialog.showOpenDialog(win, {
+        properties: ['openDirectory']
+    })
+    if (result) {
+        win.webContents.send('openFileDialog', result[0]);
+        console.log('directories selected', result[0])
+    }
+});
 ipcMain.on('song-db-list', () => {
     const promise = new Promise((resolve, reject) => {
         db.all(`select 
@@ -167,15 +176,18 @@ ipcMain.on('download-song', (event, data) => {
     }
     notifyToMainWindow({type: 'progress', data: 'make youtube-dl command'});
     const makeCommand = (youtubeId, duration, downloadPath, fileName) => {
-        return `${getResourcePath('libs/youtube-dl')} --extract-audio --audio-format mp3 --audio-quality 0 --ffmpeg-location ${getResourcePath('libs')} -o '${downloadPath}/${fileName}.%(ext)s' ${youtubeId} --postprocessor-args "-t ${duration}"`;
+        return `${getResourcePath('libs/youtube-dl')} --extract-audio --audio-format mp3 --audio-quality 0 --ffmpeg-location ${getResourcePath('libs')} -o '${downloadPath}/${fileName}.%(ext)s' ${YOUTUBE_URL}${youtubeId} --postprocessor-args "-t ${duration}"`;
     }
     const command = (command) => {
         return new Promise((resolve, reject) => {
-            exec(command, (err, stdout, stderr) => {
-                if (err) reject(err);
-                if (stderr) reject(stderr);
-                resolve(stdout);
-            });
+            const process = exec(command);
+            process.stdout.on('data', data => {
+                console.log(data)
+            })
+            process.on('exit', code => {
+                if (code === 0 ) resolve(code);
+                else reject(code);
+            })
         });
     }
     notifyToMainWindow({type: 'progress', data: 'get music detail data'});
@@ -202,10 +214,12 @@ ipcMain.on('download-song', (event, data) => {
              distributor: 'Dreamus' } }
         */
         const fileName = `${bugsData.musicDetail.artist}_${bugsData.musicDetail.songName.replace(" ", "_")}`;
+
         notifyToMainWindow({type: 'progress', data: 'make youtube-dl command'});
         const downloadCommand = makeCommand(data.youtubeId, bugsData.musicDetail.duration, data.downloadPath, data.youtubeId);
-        logger.info(downloadCommand);
+
         notifyToMainWindow({type: 'progress', data: 'execute youtube-dl command'});
+        console.log(downloadCommand)
         await command(downloadCommand);
         const musicPath = path.resolve(data.downloadPath, `${data.youtubeId}.mp3`);
         logger.info(musicPath)
@@ -226,10 +240,30 @@ ipcMain.on('download-song', (event, data) => {
         // composer: "작곡가"
         // genre: 장르 숫자
     }).catch(e => {
+        console.log(e);
         notifyToMainWindow({type: 'error', data: 'music download failed'});
         logger.info(e)
     })
 });
+ipcMain.on('delete-song', (event, data) => {
+    if(!data) {
+        return;
+    }
+    try {
+        const stmt = db.prepare(
+            `delete from music where bugs_id = ?`
+        );
+        stmt.run([data.key], err => {
+            if(err) {
+                console.log(err);
+            }
+            win.webContents.send('delete-song', 200);
+        })
+    } catch(e) {
+        console.log(e)
+    }
+});
+
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
     // On macOS it is common for applications and their menu bar

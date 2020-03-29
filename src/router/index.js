@@ -3,6 +3,7 @@ import VueRouter from 'vue-router'
 import Home from '../views/Top100.vue'
 import YoutubePlayer from "../views/YoutubePlayer";
 import StoredMusic from "../views/StoredMusic";
+import SearchMusic from "@/views/SearchMusic";
 
 Vue.use(VueRouter)
 
@@ -21,6 +22,11 @@ const routes = [
     path: '/stored',
     name: 'stored',
     component: StoredMusic
+  },
+  {
+    path: '/search',
+    name: 'search',
+    component: SearchMusic
   }
 ]
 
