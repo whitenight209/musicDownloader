@@ -8,7 +8,8 @@ export default new Vuex.Store({
   state: {
     top100List: [],
     musicDetail: {},
-    useTopBar: true
+    useTopBar: true,
+    downloadPath: undefined
   },
   mutations: {
     setTop100List (state, musicList) {
@@ -19,6 +20,9 @@ export default new Vuex.Store({
     },
     setTopBar (state, topBarFlag) {
       state.useTopBar = topBarFlag;
+    },
+    setDownloadPath (state, downloadPath) {
+      state.downloadPath = downloadPath;
     }
   },
   actions: {
@@ -33,6 +37,9 @@ export default new Vuex.Store({
     },
     setTopBarFlag ({ commit }, flag) {
       commit('setTopBar', flag);
+    },
+    setDownloadPath ({ commit }, downloadPath) {
+      commit('setDownloadPath', downloadPath);
     }
   },
   modules: {
@@ -46,6 +53,9 @@ export default new Vuex.Store({
     },
     useTopBar (state) {
       return state.useTopBar;
+    },
+    downloadPath (state) {
+      return state.downloadPath;
     }
   }
 });

@@ -22,6 +22,7 @@
 
 <script>
 import Event from '@/Event';
+import { mapGetters } from 'vuex';
 import { mdiBriefcaseDownloadOutline } from '@mdi/js';
 const { ipcRenderer } = window.require('electron');
 
@@ -29,17 +30,17 @@ export default {
   name: 'StoredMusic',
   created () {
     ipcRenderer.on(Event.EVENT_SELECT_MUSIC, this.setMusicList);
-    ipcRenderer.on(Event.OPEN_FILE_DIALOG, (e, downloadPath) => {
-      this.downloadPath = downloadPath;
-    });
   },
   mounted () {
     console.log('mounted');
     ipcRenderer.send(Event.EVENT_SELECT_MUSIC, {});
   },
   beforeDestroy () {
-    console.log('destroy');
     ipcRenderer.removeAllListeners(Event.EVENT_SELECT_MUSIC);
+    console.log('destroy');
+  },
+  computed: {
+    ...mapGetters({ getDownloadPath: 'downloadPath' })
   },
   data () {
     return {
@@ -58,7 +59,12 @@ export default {
   methods: {
     downloadSong (id) {
       console.log(`downlaod song id ${id}`);
-      ipcRenderer.send(Event.DOWNLOAD_MUSIC, { musicId: id, downloadPath: this.downloadPath });
+      const downloadPath = this.getDownloadPath;
+      if (!downloadPath) {
+        alert('다운로드 경로를 설정해주세요.');
+        return;
+      }
+      ipcRenderer.send(Event.DOWNLOAD_MUSIC, { musicId: id, downloadPath });
     },
     setMusicList (e, musicList) {
       this.musicList = musicList;

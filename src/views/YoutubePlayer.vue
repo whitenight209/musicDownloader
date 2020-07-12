@@ -154,7 +154,6 @@ export default {
     padding: 0;
   }
 </style>
-
 <!--
 유투브 search input = document.querySelector('input.ytd-searchbox');
      search button = document.querySelector('button#search-icon-legacy');

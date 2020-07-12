@@ -93,10 +93,11 @@ ipcMain.on(Events.OPEN_FILE_DIALOG, e => {
 ipcMain.on(Events.DOWNLOAD_MUSIC, async (e, { musicId, downloadPath }) => {
   logger.debug('EVENT_SELET_MUSIC');
   logger.debug(`music id ${musicId}`);
-  const music = await database.selectMusicById(db, musicId);
+  let music = await database.selectMusicById(db, musicId);
+  music = music[0];
   logger.debug(music);
   const libPath = getResourcePath('lib');
-  const result = await downloadYoutube(libPath, music.youtubeId, music.duration, downloadPath, music.name);
+  const result = await downloadYoutube(libPath, music.youtubeId, music.duration, downloadPath, music.youtubeId);
   logger.debug(`download music ${music.name} result ${result}`);
 });
 const createYoutubeWindow = (musicId) => {

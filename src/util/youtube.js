@@ -3,28 +3,45 @@ import { YOUTUBE_URL } from '@/util/properties';
 import Logger from '@/Logger';
 export const downloadYoutube = (libPath, youtubeId, duration, downloadPath, fileName) => {
   return new Promise((resolve, reject) => {
-    const youtubeCommand = makeCommand(libPath, youtubeId, duration, duration, downloadPath, fileName);
-    const youtubeDl = spawn(youtubeCommand);
+    const logger = new Logger();
+    const youtubeCommand = makeCommand(libPath, youtubeId, duration, downloadPath, fileName);
+    const youtubeDl = spawn(youtubeCommand.command, youtubeCommand.args);
     youtubeDl.stdout.on('data', (data) => {
-      Logger.debug(`stdout: ${data}`);
+      logger.debug(`stdout: ${data}`);
     });
 
     youtubeDl.stderr.on('data', (data) => {
-      Logger.debug(`stderr: ${data}`);
+      logger.debug(`stderr: ${data}`);
     });
 
     youtubeDl.on('close', (code) => {
-      Logger.debug(`child process exited with code ${code}`);
-      resolve(code);
+      logger.debug(`child process exited with code ${code}`);
+      resolve(`${downloadPath}/${youtubeId}.mp3`);
     });
     youtubeDl.on('error', (err) => {
-      Logger.debug(err);
+      logger.debug(err);
       reject(err);
     });
   });
 };
 const makeCommand = (libPath, youtubeId, duration, downloadPath, fileName) => {
-  return `${libPath}/youtube-dl --extract-audio --audio-format mp3 --audio-quality 0 --ffmpeg-location ${libPath} -o '${downloadPath}/${fileName}.%(ext)s' ${YOUTUBE_URL}${youtubeId} --postprocessor-args "-t ${duration}"`;
+  const command = `${libPath}/youtube-dl`;
+  const args = [];
+  args.push('--extract-audio');
+  args.push('--audio-format');
+  args.push('mp3');
+  args.push('--audio-quality');
+  args.push('0');
+  args.push('--ffmpeg-location');
+  args.push(libPath);
+  args.push('-o');
+  args.push(`${downloadPath}/${youtubeId}.%(ext)s`);
+  args.push(`${YOUTUBE_URL}${youtubeId}`);
+  // TODO : 나중에 duration 설정도 가능하게 변경 할 것.
+  // args.push('--postprocessor-args');
+  // args.push('-t');
+  // args.push(`${duration}`);
+  return { command, args };
 };
 export default {
   downloadYoutube
