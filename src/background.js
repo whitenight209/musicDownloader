@@ -6,6 +6,9 @@ import Events from '@/Event';
 import Logger from '@/Logger';
 import database from '@/util/database';
 import { downloadYoutube } from '@/util/youtube';
+import { getImage } from '@/util/api';
+import { writeMetaData } from '@/util/musicUtils';
+import fs from 'fs';
 import {
   createProtocol
   /* installVueDevtools */
@@ -25,8 +28,12 @@ const getResourcePath = (dir) => {
   return pathToDbFile;
 };
 
-const logPath = getResourcePath('logs/debug.log');
-const logger = new Logger(logPath, isBuild);
+const logFilePath = getResourcePath('logs/debug.log');
+const logPath = getResourcePath('logs');
+if (!fs.existsSync(logPath)) {
+  fs.mkdirSync(logPath);
+}
+const logger = new Logger(logFilePath, isBuild);
 //
 const db = knex({
   client: 'sqlite3',
@@ -78,7 +85,14 @@ ipcMain.on(Events.EVENT_SELECT_MUSIC, (e, { page = 0, offset = 30 }) => {
     win.send(Events.EVENT_SELECT_MUSIC, musicList);
   });
 });
-
+ipcMain.on(Events.DELETE_STORED_MUSIC, (e, musicId) => {
+  logger.debug('EVENT_DELETE_MUSIC');
+  const deleteResult = database.deleteMusic(db, musicId);
+  deleteResult.then(e => {
+    win.send(Events.EVENT_REFRESH_ITEMS);
+    logger.debug(`${e}`);
+  });
+});
 ipcMain.on(Events.OPEN_FILE_DIALOG, e => {
   dialog.showOpenDialog(win, { properties: ['openDirectory'] })
     .then(({ canceled, filePaths }) => {
@@ -97,8 +111,13 @@ ipcMain.on(Events.DOWNLOAD_MUSIC, async (e, { musicId, downloadPath }) => {
   music = music[0];
   logger.debug(music);
   const libPath = getResourcePath('lib');
+  const mp3FilePath = `${downloadPath}/${music.youtubeId}.mp3`;
+  const newMp3FilePath = `${downloadPath}/${music.name.replace(' ', '_')}.mp3`;
   const result = await downloadYoutube(libPath, music.youtubeId, music.duration, downloadPath, music.youtubeId);
+  const imageData = Buffer.from(await getImage(music.albumCoverImage), 'binary');
+  writeMetaData(mp3FilePath, music.name, music.artistName, music.albumName, imageData);
   logger.debug(`download music ${music.name} result ${result}`);
+  fs.renameSync(mp3FilePath, newMp3FilePath);
 });
 const createYoutubeWindow = (musicId) => {
   if (!youtubeWindow) {

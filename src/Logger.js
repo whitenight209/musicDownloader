@@ -6,7 +6,12 @@ export default class Logger {
       this.fileLocation = fileLocation;
       this.isProduction = isProduction;
       if (this.isProduction) {
-        this.writer = fs.openSync(this.fileLocation, 'a');
+        // const isExists = fs.existsSync(this.fileLocation);
+        // const time = new Date();
+        // if (!isExists) {
+        //   fs.utimesSync(this.fileLocation, time, time);
+        // }
+        this.writer = fs.openSync(this.fileLocation, 'w');
       }
       Logger.instance = this;
     }

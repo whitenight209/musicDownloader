@@ -23,12 +23,13 @@
 <script>
 import Event from '@/Event';
 import { mapGetters } from 'vuex';
-import { mdiBriefcaseDownloadOutline } from '@mdi/js';
+import { mdiBriefcaseDownloadOutline, mdiDeleteCircle } from '@mdi/js';
 const { ipcRenderer } = window.require('electron');
 
 export default {
   name: 'StoredMusic',
   created () {
+    ipcRenderer.on(Event.EVENT_REFRESH_ITEMS, this.refreshMusic);
     ipcRenderer.on(Event.EVENT_SELECT_MUSIC, this.setMusicList);
   },
   mounted () {
@@ -37,6 +38,7 @@ export default {
   },
   beforeDestroy () {
     ipcRenderer.removeAllListeners(Event.EVENT_SELECT_MUSIC);
+    ipcRenderer.removeAllListeners(Event.EVENT_REFRESH_ITEMS);
     console.log('destroy');
   },
   computed: {
@@ -51,7 +53,8 @@ export default {
         { text: 'artist', value: 'artistName', sortable: false },
         { text: 'album', value: 'albumName', sortable: false },
         { text: '', value: '', sortable: false },
-        { text: 'download', value: 'id', type: 'button', cback: (id) => this.downloadSong(id), icon: mdiBriefcaseDownloadOutline }
+        { text: 'download', value: 'id', type: 'button', cback: (id) => this.downloadSong(id), icon: mdiBriefcaseDownloadOutline },
+        { text: 'delete', value: 'id', type: 'button', cback: (id) => this.deleteMusic(id), icon: mdiDeleteCircle }
       ],
       musicList: []
     };
@@ -69,6 +72,12 @@ export default {
     setMusicList (e, musicList) {
       this.musicList = musicList;
       console.log(musicList);
+    },
+    deleteMusic (id) {
+      ipcRenderer.send(Event.DELETE_STORED_MUSIC, id);
+    },
+    refreshMusic () {
+      ipcRenderer.send(Event.EVENT_SELECT_MUSIC, {});
     }
   }
 };

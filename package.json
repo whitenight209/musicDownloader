@@ -21,7 +21,7 @@
     "cheerio": "^1.0.0-rc.3",
     "core-js": "^3.6.5",
     "knex": "^0.21.1",
-    "music-metadata": "^7.0.0",
+    "node-id3": "^0.1.17",
     "roboto-fontface": "*",
     "sqlite3": "5.0.0",
     "vue": "^2.6.11",

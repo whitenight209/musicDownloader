@@ -10,8 +10,13 @@ const selectMusic = (db, { page = 0, offset = 30 }) => {
 const selectMusicById = (db, musicId) => {
   return db.select('*').from('music').where({ id: musicId });
 };
+export const deleteMusic = (db, musicId) => {
+  return db('music').where({ id: musicId }).del();
+};
+
 export default {
   insertMusic,
   selectMusic,
-  selectMusicById
+  selectMusicById,
+  deleteMusic
 };
