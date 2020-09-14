@@ -122,8 +122,8 @@ ipcMain.on(Events.DOWNLOAD_MUSIC, async (e, { musicId, downloadPath }) => {
 const createYoutubeWindow = (musicId) => {
   if (!youtubeWindow) {
     youtubeWindow = new BrowserWindow({
-      width: 800,
-      height: 600,
+      width: 1280,
+      height: 800,
       webPreferences: {
         nodeIntegration: true,
         webSecurity: false,
@@ -153,13 +153,15 @@ const createYoutubeWindow = (musicId) => {
 
 const createWindow = () => {
   // Create the browser window.
+  /* global __static */
   win = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1280,
+    height: 800,
     webPreferences: {
       nodeIntegration: true,
       webSecurity: false
-    }
+    },
+    icon: path.join(__static, 'icon.png')
   });
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode

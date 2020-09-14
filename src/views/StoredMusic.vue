@@ -8,7 +8,7 @@
       <tr>
         <template v-for="(header, headerIndex) in headers">
           <img v-if="header.type === 'image'" class="d-block d-sm-table-cell" :key="headerIndex"  :src="item[header.value]" :width="header.width" />
-          <td  v-else-if="header.type === 'button'" :key="headerIndex"  class="d-block d-sm-table-cell">
+          <td  v-else-if="header.type === 'button'" :key="headerIndex" :width="header.width ? header.width +'px' : '25px'"  class="d-block d-sm-table-cell">
             <v-btn @click="header.cback(item[header.value])" small color="secondary">
               <v-icon>{{header.icon}}</v-icon>
             </v-btn>
