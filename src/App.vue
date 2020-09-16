@@ -3,15 +3,34 @@
 
   <v-app>
     <v-navigation-drawer
+      :update:mini-variant="eventTest"
       app
+      permanent
+      v-model="drawer"
+      :mini-variant.sync=mini
+      v-if="useMenu"
       expand-on-hover
     >
-      <v-list dense>
+      <v-list>
+        <template v-for="(item, i) in items">
+          <v-list-group v-if="item.menu" :key="i" :prepend-icon="item.icon" value="true">
+            <template v-slot:activator>
+              <v-list-item-title>{{item.title}}</v-list-item-title>
+            </template>
+              <v-list-item :key="subIndex" v-for="(subMenu, subIndex) in item.menu" link :to="subMenu.link">
+                <v-list-item-icon>
+                  <v-icon>{{ subMenu.icon }}</v-icon>
+                </v-list-item-icon>
+                <v-list-item-content>
+                  <v-list-item-title>{{ subMenu.title }}</v-list-item-title>
+                </v-list-item-content>
+              </v-list-item>
+          </v-list-group>
           <v-list-item
-            v-for="item in items"
-            :key="item.title"
+            v-else
+            :key="i"
             link
-            :to="item.link"
+            :to="item.link ? item.link : ''"
           >
             <v-list-item-icon>
               <v-icon>{{ item.icon }}</v-icon>
@@ -20,10 +39,11 @@
               <v-list-item-title>{{ item.title }}</v-list-item-title>
             </v-list-item-content>
           </v-list-item>
+        </template>
       </v-list>
     </v-navigation-drawer>
 
-    <v-app-bar v-if="useTopBar" app>
+    <v-app-bar v-if="useAppBar" app>
       <v-btn to="/">home</v-btn>
       <v-btn to="/stored">stored</v-btn>
       <v-btn @click="openYoutubeWindow">youtube</v-btn>
@@ -47,35 +67,67 @@
 </template>
 
 <script>
-import { mdiMusicCircle, mdiYoutube, mdiFolderMusic } from '@mdi/js';
+import { mdiMusicCircle, mdiYoutube, mdiFolderMusic, mdiCardSearch, mdiPoll } from '@mdi/js';
 import Event from '@/Event';
 import { mapGetters, mapActions } from 'vuex';
+
 const { ipcRenderer } = window.require('electron');
 export default {
 
   name: 'App',
   created () {
+    console.log(this.$route);
     ipcRenderer.on(Event.OPEN_FILE_DIALOG, (e, downloadPath) => {
       this.setDownloadPath(downloadPath);
     });
+    this.$route.query.appBar === 'false' ? this.setAppBarFlag(false) : this.setAppBarFlag(true);
+    this.$route.query.menu === 'false' ? this.setMenuFlag(false) : this.setMenuFlag(true);
   },
   computed: {
-    ...mapGetters({ useTopBar: 'useTopBar' })
+    ...mapGetters(
+      {
+        useAppBar: 'useAppBar',
+        useMenu: 'getMenuFlag'
+      }
+    )
+  },
+  watch: {
+    drawer (value) {
+      console.log(value);
+    }
   },
   methods: {
-    ...mapActions({ setDownloadPath: 'setDownloadPath' }),
+    ...mapActions(
+      {
+        setDownloadPath: 'setDownloadPath',
+        setAppBarFlag: 'setAppBarFlag',
+        setMenuFlag: 'setMenuFlag'
+      }
+    ),
     openDialog () {
       ipcRenderer.send(Event.OPEN_FILE_DIALOG);
     },
     openYoutubeWindow () {
       ipcRenderer.send(Event.EVENT_OPEN_YOUTUBE_WINDOW);
+    },
+    eventTest (e) {
+      console.log(e);
     }
   },
   data () {
     return {
+      mini: true,
+      drawer: true,
       items: [
-        { title: 'Bugs', icon: mdiMusicCircle, link: '/' },
-        { title: 'Youtube', icon: mdiYoutube, link: '/youtube' },
+        {
+          title: 'Bugs',
+          icon: mdiMusicCircle,
+          menu: [
+            { title: 'top100', icon: mdiPoll, link: '/' },
+            { title: 'search', icon: mdiCardSearch, link: '/bugs/search' }
+          ]
+        },
+        { title: 'Youtube', icon: mdiYoutube, link: '/youtube?topBar=true' },
         { title: 'Stored', icon: mdiFolderMusic, link: 'stored' }
       ]
     };

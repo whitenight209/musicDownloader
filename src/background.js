@@ -9,10 +9,8 @@ import { downloadYoutube } from '@/util/youtube';
 import { getImage } from '@/util/api';
 import { writeMetaData } from '@/util/musicUtils';
 import fs from 'fs';
-import {
-  createProtocol
-  /* installVueDevtools */
-} from 'vue-cli-plugin-electron-builder/lib';
+import { createProtocol } from 'vue-cli-plugin-electron-builder/lib';
+import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer';
 import path from 'path';
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
@@ -43,15 +41,6 @@ const db = knex({
   useNullAsDefault: true
 });
 
-// const db = require('knex')({
-//   client: 'sqlite3',
-//   connection: {
-//     filename: getResourcePath('db/music.db')
-//   }
-// });
-// const db = new Sqlite.Database(getResourcePath('db/music.db'));
-// console.log(db)
-// Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: { secure: true, standard: true } }]);
 
 ipcMain.on(Events.EVENT_OPEN_YOUTUBE_WINDOW, (event, musicDetail) => {
@@ -119,7 +108,7 @@ ipcMain.on(Events.DOWNLOAD_MUSIC, async (e, { musicId, downloadPath }) => {
   logger.debug(`download music ${music.name} result ${result}`);
   fs.renameSync(mp3FilePath, newMp3FilePath);
 });
-const createYoutubeWindow = (musicId) => {
+const createYoutubeWindow = async (musicId) => {
   if (!youtubeWindow) {
     youtubeWindow = new BrowserWindow({
       width: 1280,
@@ -135,12 +124,12 @@ const createYoutubeWindow = (musicId) => {
   }
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode
-    youtubeWindow.loadURL(`${process.env.WEBPACK_DEV_SERVER_URL}#/youtube`);
+    await youtubeWindow.loadURL(`${process.env.WEBPACK_DEV_SERVER_URL}#/youtube?appBar=false&menu=false`);
     if (!process.env.IS_TEST) youtubeWindow.webContents.openDevTools();
   } else {
     createProtocol('app');
     // Load the index.html when not in development
-    youtubeWindow.loadURL('app://./index.html#youtube').then(() => console.log('load success')).catch(err => console.log(err));
+    await youtubeWindow.loadURL('app://./index.html#youtube?appBar=false&menu=false').then(() => console.log('load success')).catch(err => console.log(err));
   }
   youtubeWindow.on('closed', () => {
     logger.debug('youtube window closed');
@@ -151,7 +140,7 @@ const createYoutubeWindow = (musicId) => {
   });
 };
 
-const createWindow = () => {
+const createWindow = async () => {
   // Create the browser window.
   /* global __static */
   win = new BrowserWindow({
@@ -165,12 +154,12 @@ const createWindow = () => {
   });
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode
-    win.loadURL(`${process.env.WEBPACK_DEV_SERVER_URL}`);
+    await win.loadURL(`${process.env.WEBPACK_DEV_SERVER_URL}`);
     if (!process.env.IS_TEST) win.webContents.openDevTools();
   } else {
     createProtocol('app');
     // Load the index.html when not in development
-    win.loadURL('app://./index.html');
+    await win.loadURL('app://./index.html');
   }
 
   win.on('closed', () => {
@@ -190,11 +179,11 @@ app.on('window-all-closed', () => {
   }
 });
 
-app.on('activate', () => {
+app.on('activate', async () => {
   // On macOS it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
   if (win === null) {
-    createWindow();
+    await createWindow();
   }
 });
 
@@ -209,12 +198,11 @@ app.on('ready', async () => {
     // Electron will not launch with Devtools extensions installed on Windows 10 with dark mode
     // If you are not using Windows 10 dark mode, you may uncomment these lines
     // In addition, if the linked issue is closed, you can upgrade electron and uncomment these lines
-    // try {
-    //   await installVueDevtools()
-    // } catch (e) {
-    //   console.error('Vue Devtools failed to install:', e.toString())
-    // }
-
+    try {
+      await installExtension(VUEJS_DEVTOOLS);
+    } catch (e) {
+      console.error('Vue Devtools failed to install:', e.toString());
+    }
   }
   createWindow();
 });

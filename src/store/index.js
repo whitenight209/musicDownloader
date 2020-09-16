@@ -8,8 +8,9 @@ export default new Vuex.Store({
   state: {
     top100List: [],
     musicDetail: {},
-    useTopBar: true,
-    downloadPath: undefined
+    useAppBar: true,
+    downloadPath: undefined,
+    useMenu: true
   },
   mutations: {
     setTop100List (state, musicList) {
@@ -18,11 +19,14 @@ export default new Vuex.Store({
     setMusicDetail (state, musicDetail) {
       state.musicDetail = musicDetail;
     },
-    setTopBar (state, topBarFlag) {
-      state.useTopBar = topBarFlag;
+    setAppBar (state, topBarFlag) {
+      state.useAppBar = topBarFlag;
     },
     setDownloadPath (state, downloadPath) {
       state.downloadPath = downloadPath;
+    },
+    setMenuFlag (state, useMenu) {
+      state.useMenu = useMenu;
     }
   },
   actions: {
@@ -35,11 +39,14 @@ export default new Vuex.Store({
       console.log(musicDetail);
       commit('setMusicDetail', musicDetail);
     },
-    setTopBarFlag ({ commit }, flag) {
-      commit('setTopBar', flag);
+    setAppBarFlag ({ commit }, flag) {
+      commit('setAppBar', flag);
     },
     setDownloadPath ({ commit }, downloadPath) {
       commit('setDownloadPath', downloadPath);
+    },
+    setMenuFlag ({ commit }, flag) {
+      commit('setMenuFlag', flag);
     }
   },
   modules: {
@@ -51,11 +58,14 @@ export default new Vuex.Store({
     getMusicDetail (state) {
       return state.musicDetail;
     },
-    useTopBar (state) {
-      return state.useTopBar;
+    useAppBar (state) {
+      return state.useAppBar;
     },
     downloadPath (state) {
       return state.downloadPath;
+    },
+    getMenuFlag (state) {
+      return state.useMenu;
     }
   }
 });

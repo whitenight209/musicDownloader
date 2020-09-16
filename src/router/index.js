@@ -3,6 +3,7 @@ import VueRouter from 'vue-router';
 import Home from '../views/BugsTop100.vue';
 import YoutubePlayer from '@/views/YoutubePlayer';
 import StoredMusic from '@/views/StoredMusic';
+import BugsSearch from '@/views/BugsSearch';
 
 Vue.use(VueRouter);
 
@@ -11,6 +12,11 @@ const routes = [
     path: '/',
     name: 'Home',
     component: Home
+  },
+  {
+    path: '/bugs/search',
+    name: 'bugsSearch',
+    component: BugsSearch
   },
   {
     path: '/youtube',

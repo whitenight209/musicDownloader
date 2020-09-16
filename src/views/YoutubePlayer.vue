@@ -111,66 +111,14 @@ export default {
     });
   },
   mounted () {
-    this.setTopBarFlag(false);
     const webview = document.getElementById('youtubePlayer');
     window.onresize = () => {
       webview.style.height = (window.innerHeight - 235) + 'px';
     };
     webview.style.height = (window.innerHeight - 235) + 'px';
-    // webview.addEventListener('did-finish-load', (e) => {
-    //     console.log(e);
-    // });
-    // webview.addEventListener('did-navigate-in-page', e => {
-    //   console.log(e.url);
-    // webview.executeJavaScript(
-    //     `
-    //     if(!testButton) {
-    //         let testButton = document.createElement('button');
-    //         testButton.innerHTML = '박철호'
-    //     }
-    //     if(!container) {
-    //         const container = document.querySelector('#container');
-    //     }
-    //     container.appendChild(testButton);
-    //     `
-    // )
-    // });
-    // webview.addEventListener('dom-ready', () => {
-    //   webview.executeJavaScript(`
-    //               const {ipcRenderer} = require('electron')
-    //               ipcRenderer.on('set-data', (e, data) => {
-    //                 ipcRenderer.sendToHost('pong')
-    //                 const searchInput = document.querySelector('input.ytd-searchbox');
-    //                 searchInput.value = data;
-    //                 const button = document.querySelector('button#search-icon-legacy');
-    //                 button.click();
-    //               })
-    //               const grid = document.querySelectorAll('#contents ytd-rich-item-renderer')
-    //               grid.forEach( (item, index) => {
-    //                 let button = document.createElement('button');
-    //                 button.innerHTML = '선택'
-    //                 item.appendChild(button);
-    //               })
-    //               // const container = document.querySelector('#container');
-    //               // let button = document.createElement('button');
-    //               // container.appendChild(button);
-    //
-    //               window.onbeforeunload  = function() {
-    //                 console.log(window.location.href)
-    //               }
-    //               document.addEventListener("DOMContentLoaded", function(event) {
-    //                 console.log("DOM fully loaded and parsed");
-    //               });
-    //               `
-    //   );
-    // const isDevelopment = process.env.NODE_ENV !== 'production';
-    // if (isDevelopment) {
-    //   webview.openDevTools();
-    // }
-    // });
   },
   methods: {
-    ...mapActions({ setTopBarFlag: 'setTopBarFlag' }),
+    ...mapActions({ setAppBarFlag: 'setAppBarFlag' }),
     saveMusic () {
       const webview = document.getElementById('youtubePlayer');
       const regex = new RegExp('https:\\/\\/www.youtube.com\\/watch\\?v=.+');
