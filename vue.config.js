@@ -13,7 +13,8 @@ module.exports = {
         extraResources: [
           'db/music.db',
           'lib/ffmpeg',
-          'lib/youtube-dl'
+          'lib/youtube-dl',
+          'conf/'
         ]
       },
       externals: ['knex', 'sqlite3']

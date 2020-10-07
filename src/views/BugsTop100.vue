@@ -28,13 +28,10 @@ import { ipcRenderer } from "electron"
 </template>
 
 <script>
-// @ is an alias to /src
-// import HelloWorld from '@/components/HelloWorld.vue'
-
 import { mapGetters, mapActions } from 'vuex';
 import { mdiYoutube } from '@mdi/js';
-import Events from '../Event';
-const { ipcRenderer } = window.require('electron');
+// import Events from '../Event';
+// const { ipcRenderer } = window.require('electron');
 export default {
 
   name: 'Home',
@@ -65,9 +62,11 @@ export default {
   },
   methods: {
     ...mapActions({ getTop100MusicList: 'getTop100MusicList', getMusicDetail: 'getMusicDetail' }),
-    openYoutubeWindow (musicId) {
-      console.log(this.musicDetail);
-      ipcRenderer.send(Events.EVENT_OPEN_YOUTUBE_WINDOW, musicId);
+    async openYoutubeWindow (musicId) {
+      console.log(musicId);
+      await this.$router.push({ name: 'youtubeSearch', query: { bugsId: musicId } });
+      // console.log(this.musicDetail);
+      // ipcRenderer.send(Events.EVENT_OPEN_YOUTUBE_WINDOW, musicId);
     }
   },
   computed: {

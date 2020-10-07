@@ -1,6 +1,7 @@
 import axios from 'axios';
 import cheerio from 'cheerio';
-import { stripString } from '@/util/util';
+// import querystring from 'querystring';
+import { stripString, youtubeDurationConverter } from '@/util/util';
 
 export const getImage = async (url) => {
   return await axios.request({
@@ -13,12 +14,12 @@ export const getImage = async (url) => {
   }).then(res => res.data);
 };
 
-export const searchBugsSong = (keyword, page_number = 1) => {
+export const searchBugsSong = (keyword, option = 'ARTIST_TRACK_ALBUM', page_number = 1) => {
   return axios.get('https://music.bugs.co.kr/search/track', {
     params: {
       q: keyword,
       page: page_number,
-      target: 'TRACK_ONLY',
+      target: option,
       flac_only: 'false',
       sort: 'A'
     }
@@ -164,4 +165,25 @@ export const getBugsTop100 = () => {
     });
     return musicList;
   });
+};
+
+export const searchYoutube = async (apiKey, query) => {
+  console.log(query);
+  const idSearchResult = await axios.get(`https://www.googleapis.com/youtube/v3/search?key=${apiKey}&q=${query}&maxResults=50`);
+  console.log(idSearchResult.data);
+  const youtubeIdList = idSearchResult.data.items.map(item => item.id.videoId);
+  if (!youtubeIdList.length) {
+    return null;
+  }
+  console.log(youtubeIdList);
+  const videoDetails = await axios.get(`https://www.googleapis.com/youtube/v3/videos?key=${apiKey}&part=snippet,contentDetails&id=${youtubeIdList.join(',')}`);
+  const searchResult = videoDetails.data;
+  searchResult.items.forEach(item => {
+    item.contentDetails.durationStr = youtubeDurationConverter(item.contentDetails.duration);
+  });
+  searchResult.nextPageToken = idSearchResult.data.nextPageToken;
+  searchResult.prevPageToken = idSearchResult.data.prevPageToken;
+  searchResult.pageInfo = idSearchResult.data.pageInfo;
+  console.log(searchResult);
+  return searchResult;
 };

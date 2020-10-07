@@ -2,6 +2,7 @@
   <v-data-table
     :items="musicList"
     :headers="headers"
+    :items-per-page="offset"
     hide-default-footer
   >
     <template v-slot:item="{ item, headers }">
@@ -31,6 +32,7 @@ export default {
   created () {
     ipcRenderer.on(Event.EVENT_REFRESH_ITEMS, this.refreshMusic);
     ipcRenderer.on(Event.EVENT_SELECT_MUSIC, this.setMusicList);
+    ipcRenderer.on(Event.EVENT_SEND_DOWNLOAD_SONG_PROGRESS, this.downloadProcess);
   },
   mounted () {
     console.log('mounted');
@@ -56,7 +58,10 @@ export default {
         { text: 'download', value: 'id', type: 'button', cback: (id) => this.downloadSong(id), icon: mdiBriefcaseDownloadOutline },
         { text: 'delete', value: 'id', type: 'button', cback: (id) => this.deleteMusic(id), icon: mdiDeleteCircle }
       ],
-      musicList: []
+      musicList: [],
+      totalCount: 0,
+      offset: 50,
+      currentPage: 1
     };
   },
   methods: {
@@ -69,15 +74,19 @@ export default {
       }
       ipcRenderer.send(Event.DOWNLOAD_MUSIC, { musicId: id, downloadPath });
     },
-    setMusicList (e, musicList) {
-      this.musicList = musicList;
-      console.log(musicList);
+    setMusicList (e, data) {
+      this.musicList = data.musicList;
+      this.totalCount = data.totalCount;
+      console.log(data);
     },
     deleteMusic (id) {
       ipcRenderer.send(Event.DELETE_STORED_MUSIC, id);
     },
     refreshMusic () {
       ipcRenderer.send(Event.EVENT_SELECT_MUSIC, {});
+    },
+    downloadProcess (e, data) {
+      console.log(data);
     }
   }
 };

@@ -2,7 +2,7 @@
 
 import { app, protocol, BrowserWindow, ipcMain, dialog } from 'electron';
 import knex from 'knex';
-import Events from '@/Event';
+import Event from '@/Event';
 import Logger from '@/Logger';
 import database from '@/util/database';
 import { downloadYoutube } from '@/util/youtube';
@@ -21,6 +21,14 @@ app.commandLine.appendSwitch('disable-web-security');
 // be closed automatically when the JavaScript object is garbage collected.
 let win;
 let youtubeWindow;
+
+const registerYoutubeApiKey = () => {
+  const youtubeKeyFilePath = getResourcePath('conf/config.json');
+  const binaryData = fs.readFileSync(youtubeKeyFilePath);
+  const config = JSON.parse(binaryData);
+  return config;
+};
+
 const getResourcePath = (dir) => {
   const pathToDbFile = isBuild ? path.join(__dirname, `../${dir}`) : path.join(__dirname, 'bundled', dir);
   return pathToDbFile;
@@ -32,7 +40,7 @@ if (!fs.existsSync(logPath)) {
   fs.mkdirSync(logPath);
 }
 const logger = new Logger(logFilePath, isBuild);
-//
+const config = registerYoutubeApiKey();
 const db = knex({
   client: 'sqlite3',
   connection: {
@@ -43,10 +51,10 @@ const db = knex({
 
 protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: { secure: true, standard: true } }]);
 
-ipcMain.on(Events.EVENT_OPEN_YOUTUBE_WINDOW, (event, musicDetail) => {
+ipcMain.on(Event.EVENT_OPEN_YOUTUBE_WINDOW, (event, musicDetail) => {
   createYoutubeWindow(musicDetail);
 });
-ipcMain.on(Events.EVENT_INSERT_MUSIC, (event, data) => {
+ipcMain.on(Event.EVENT_INSERT_MUSIC, (event, data) => {
   const musicDetail = data.musicDetail;
   logger.debug(data);
   // const albumDetail = data.albumDetail;
@@ -66,34 +74,40 @@ ipcMain.on(Events.EVENT_INSERT_MUSIC, (event, data) => {
   });
   logger.debug(data);
 });
-ipcMain.on(Events.EVENT_SELECT_MUSIC, (e, { page = 0, offset = 30 }) => {
+ipcMain.on(Event.EVENT_SELECT_MUSIC, async (e, { page = 0, offset = 30 }) => {
   logger.debug('EVENT_SELECT_MUSIC');
-  const musicList = database.selectMusic(db, { page, offset });
-  musicList.then(musicList => {
-    logger.debug(musicList);
-    win.send(Events.EVENT_SELECT_MUSIC, musicList);
-  });
+  const totalCount = await database.selectMusicTotalCount(db);
+  const musicList = await database.selectMusic(db, { page, offset });
+  win.send(Event.EVENT_SELECT_MUSIC, { musicList, totalCount: totalCount[0].count });
+  // musicList.then(musicList => {
+  //   logger.debug(musicList);
+  //   win.send(Event.EVENT_SELECT_MUSIC, musicList);
+  // });
 });
-ipcMain.on(Events.DELETE_STORED_MUSIC, (e, musicId) => {
+ipcMain.on(Event.DELETE_STORED_MUSIC, (e, musicId) => {
   logger.debug('EVENT_DELETE_MUSIC');
   const deleteResult = database.deleteMusic(db, musicId);
   deleteResult.then(e => {
-    win.send(Events.EVENT_REFRESH_ITEMS);
+    win.send(Event.EVENT_REFRESH_ITEMS);
     logger.debug(`${e}`);
   });
 });
-ipcMain.on(Events.OPEN_FILE_DIALOG, e => {
+ipcMain.on(Event.OPEN_FILE_DIALOG, e => {
   dialog.showOpenDialog(win, { properties: ['openDirectory'] })
     .then(({ canceled, filePaths }) => {
       if (!canceled) {
         const filePath = filePaths[0];
         logger.debug(`dialog choose directgory ${filePath}`);
-        win.send(Events.OPEN_FILE_DIALOG, filePath);
+        win.send(Event.OPEN_FILE_DIALOG, filePath);
       }
     });
 });
 
-ipcMain.on(Events.DOWNLOAD_MUSIC, async (e, { musicId, downloadPath }) => {
+ipcMain.on(Event.DOWNLOAD_MUSIC, async (e, { musicId, downloadPath }) => {
+  const youtubeProcessSender = (musicId, progress) => {
+    console.log(`${musicId} ${progress} is sended`);
+    win.send(Event.EVENT_SEND_DOWNLOAD_SONG_PROGRESS, { musicId, progress });
+  };
   logger.debug('EVENT_SELET_MUSIC');
   logger.debug(`music id ${musicId}`);
   let music = await database.selectMusicById(db, musicId);
@@ -102,11 +116,14 @@ ipcMain.on(Events.DOWNLOAD_MUSIC, async (e, { musicId, downloadPath }) => {
   const libPath = getResourcePath('lib');
   const mp3FilePath = `${downloadPath}/${music.youtubeId}.mp3`;
   const newMp3FilePath = `${downloadPath}/${music.name.replace(' ', '_')}.mp3`;
-  const result = await downloadYoutube(libPath, music.youtubeId, music.duration, downloadPath, music.youtubeId);
+  const result = await downloadYoutube(youtubeProcessSender, musicId, libPath, music.youtubeId, music.duration, downloadPath, music.youtubeId);
   const imageData = Buffer.from(await getImage(music.albumCoverImage), 'binary');
   writeMetaData(mp3FilePath, music.name, music.artistName, music.albumName, imageData);
   logger.debug(`download music ${music.name} result ${result}`);
   fs.renameSync(mp3FilePath, newMp3FilePath);
+});
+ipcMain.on(Event.INIT_CONFIG, () => {
+  win.send(Event.INIT_CONFIG, config);
 });
 const createYoutubeWindow = async (musicId) => {
   if (!youtubeWindow) {
@@ -136,13 +153,14 @@ const createYoutubeWindow = async (musicId) => {
     youtubeWindow = null;
   });
   youtubeWindow.webContents.once('dom-ready', () => {
-    youtubeWindow.webContents.send(Events.EVENT_SET_MUSIC_DETAIL, musicId);
+    youtubeWindow.webContents.send(Event.EVENT_SET_MUSIC_DETAIL, musicId);
   });
 };
 
 const createWindow = async () => {
   // Create the browser window.
   /* global __static */
+  console.log('create main window');
   win = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -204,7 +222,9 @@ app.on('ready', async () => {
       console.error('Vue Devtools failed to install:', e.toString());
     }
   }
-  createWindow();
+  createWindow().then(() => {
+    win.send(Event.INIT_CONFIG, config);
+  });
 });
 
 // Exit cleanly on request from parent process in development mode.

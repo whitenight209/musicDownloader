@@ -10,7 +10,8 @@ export default new Vuex.Store({
     musicDetail: {},
     useAppBar: true,
     downloadPath: undefined,
-    useMenu: true
+    useMenu: true,
+    config: {}
   },
   mutations: {
     setTop100List (state, musicList) {
@@ -27,6 +28,9 @@ export default new Vuex.Store({
     },
     setMenuFlag (state, useMenu) {
       state.useMenu = useMenu;
+    },
+    setConfig (state, config) {
+      state.config = config;
     }
   },
   actions: {
@@ -47,6 +51,9 @@ export default new Vuex.Store({
     },
     setMenuFlag ({ commit }, flag) {
       commit('setMenuFlag', flag);
+    },
+    setConfig ({ commit }, config) {
+      commit('setConfig', config);
     }
   },
   modules: {
@@ -66,6 +73,9 @@ export default new Vuex.Store({
     },
     getMenuFlag (state) {
       return state.useMenu;
+    },
+    getConfig (state) {
+      return state.config;
     }
   }
 });

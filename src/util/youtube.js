@@ -1,13 +1,36 @@
 import { spawn } from 'child_process';
 import { YOUTUBE_URL } from '@/util/properties';
 import Logger from '@/Logger';
-export const downloadYoutube = (libPath, youtubeId, duration, downloadPath, fileName) => {
+export const downloadYoutube = (callBack, musicId, libPath, youtubeId, duration, downloadPath, fileName) => {
   return new Promise((resolve, reject) => {
+    const outputAnalyzer = (output) => {
+      console.log(output);
+      const downloadPercentage = output.match(/[0-9]*\.[0-9]*%/);
+      if (downloadPercentage) {
+        const percentageStr = downloadPercentage[0];
+        let percentage = percentageStr.substring(0, percentageStr.length - 1);
+        percentage = parseFloat(percentage);
+        // console.log(percentage);
+        // console.log(typeof percentage);
+        console.log(percentage / 2);
+        return percentage / 2;
+      }
+      return null;
+    }
     const logger = new Logger();
     const youtubeCommand = makeCommand(libPath, youtubeId, duration, downloadPath, fileName);
     const youtubeDl = spawn(youtubeCommand.command, youtubeCommand.args);
     youtubeDl.stdout.on('data', (data) => {
-      logger.debug(`stdout: ${data}`);
+      // console.log('test ' + data.toString());
+      // console.log(data.toString().length);
+      // console.log('test');
+      // logger.debug(`stdout: ${data.toString()}`);
+      const percentage = outputAnalyzer(data.toString());
+      if (percentage) {
+        callBack(musicId, percentage);
+      }
+      // outputAnalzyer(data);
+      // logger.debug(`stdout: ${data}`);
     });
 
     youtubeDl.stderr.on('data', (data) => {

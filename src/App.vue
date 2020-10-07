@@ -9,13 +9,15 @@
       v-model="drawer"
       :mini-variant.sync=mini
       v-if="useMenu"
-      expand-on-hover
+      expand-on-hover=""
     >
       <v-list>
         <template v-for="(item, i) in items">
-          <v-list-group v-if="item.menu" :key="i" :prepend-icon="item.icon" value="true">
+          <v-list-group v-if="item.menu" :key="i" :prepend-icon="item.icon" value="true" no-action>
             <template v-slot:activator>
-              <v-list-item-title>{{item.title}}</v-list-item-title>
+              <v-list-item-content>
+                <v-list-item-title>{{item.title}}</v-list-item-title>
+              </v-list-item-content>
             </template>
               <v-list-item :key="subIndex" v-for="(subMenu, subIndex) in item.menu" link :to="subMenu.link">
                 <v-list-item-icon>
@@ -80,6 +82,11 @@ export default {
     ipcRenderer.on(Event.OPEN_FILE_DIALOG, (e, downloadPath) => {
       this.setDownloadPath(downloadPath);
     });
+    ipcRenderer.on(Event.INIT_CONFIG, (e, config) => {
+      console.log(config);
+      this.setConfig(config);
+    });
+    ipcRenderer.send(Event.INIT_CONFIG);
     this.$route.query.appBar === 'false' ? this.setAppBarFlag(false) : this.setAppBarFlag(true);
     this.$route.query.menu === 'false' ? this.setMenuFlag(false) : this.setMenuFlag(true);
   },
@@ -101,7 +108,8 @@ export default {
       {
         setDownloadPath: 'setDownloadPath',
         setAppBarFlag: 'setAppBarFlag',
-        setMenuFlag: 'setMenuFlag'
+        setMenuFlag: 'setMenuFlag',
+        setConfig: 'setConfig'
       }
     ),
     openDialog () {
@@ -127,8 +135,14 @@ export default {
             { title: 'search', icon: mdiCardSearch, link: '/bugs/search' }
           ]
         },
-        { title: 'Youtube', icon: mdiYoutube, link: '/youtube?topBar=true' },
-        { title: 'Stored', icon: mdiFolderMusic, link: 'stored' }
+        {
+          title: 'Youtube',
+          icon: mdiYoutube,
+          menu: [
+            { title: 'search', icon: mdiYoutube, link: '/youtube/search' }
+          ]
+        },
+        { title: 'Stored', icon: mdiFolderMusic, link: '/stored' }
       ]
     };
   }

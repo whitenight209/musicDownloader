@@ -17,3 +17,14 @@ export const sleep = (time) => {
     setTimeout(resolve, time);
   });
 };
+export const utilBehindFromToday = (date) => {
+  return null;
+};
+export const youtubeDurationConverter = (duration) => {
+  let durationStr = duration.substring(2);
+
+  durationStr = durationStr.replace(/H/, '시간');
+  durationStr = durationStr.replace(/M/, '분');
+  durationStr = durationStr.replace(/S/, '초');
+  return durationStr;
+};

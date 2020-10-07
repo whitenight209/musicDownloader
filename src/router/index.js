@@ -3,6 +3,7 @@ import VueRouter from 'vue-router';
 import Home from '../views/BugsTop100.vue';
 import YoutubePlayer from '@/views/YoutubePlayer';
 import StoredMusic from '@/views/StoredMusic';
+import YoutubeSearch from '@/views/YoutubeSearch';
 import BugsSearch from '@/views/BugsSearch';
 
 Vue.use(VueRouter);
@@ -25,6 +26,11 @@ const routes = [
     // this generates a separate chunk (about.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
     component: YoutubePlayer
+  },
+  {
+    path: '/youtube/search',
+    name: 'youtubeSearch',
+    component: YoutubeSearch
   },
   {
     path: '/stored',
