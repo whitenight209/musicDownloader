@@ -45,11 +45,14 @@
       </v-list>
     </v-navigation-drawer>
 
-    <v-app-bar v-if="useAppBar" app>
-      <v-btn to="/">home</v-btn>
-      <v-btn to="/stored">stored</v-btn>
-      <v-btn @click="openYoutubeWindow">youtube</v-btn>
-      <v-btn @click="openDialog">open</v-btn>
+    <v-app-bar v-if="useAppBarFlag" app>
+      <template v-for="(item, index) in appBar">
+        <v-btn :key="index" @click="item.callback">{{item.title}}</v-btn>
+      </template>
+<!--      <v-btn to="/">home</v-btn>-->
+<!--      <v-btn to="/stored">stored</v-btn>-->
+<!--      <v-btn @click="openYoutubeWindow">youtube</v-btn>-->
+<!--      <v-btn @click="openDialog">open</v-btn>-->
     </v-app-bar>
 
     <!-- Sizes your content based upon application components -->
@@ -87,14 +90,15 @@ export default {
       this.setConfig(config);
     });
     ipcRenderer.send(Event.INIT_CONFIG);
-    this.$route.query.appBar === 'false' ? this.setAppBarFlag(false) : this.setAppBarFlag(true);
+    this.$route.query.appBar === 'true' ? this.setAppBarFlag(true) : this.setAppBarFlag(false);
     this.$route.query.menu === 'false' ? this.setMenuFlag(false) : this.setMenuFlag(true);
   },
   computed: {
     ...mapGetters(
       {
-        useAppBar: 'useAppBar',
-        useMenu: 'getMenuFlag'
+        useAppBarFlag: 'useAppBarFlag',
+        useMenu: 'getMenuFlag',
+        appBar: 'getAppBar'
       }
     )
   },
@@ -112,12 +116,6 @@ export default {
         setConfig: 'setConfig'
       }
     ),
-    openDialog () {
-      ipcRenderer.send(Event.OPEN_FILE_DIALOG);
-    },
-    openYoutubeWindow () {
-      ipcRenderer.send(Event.EVENT_OPEN_YOUTUBE_WINDOW);
-    },
     eventTest (e) {
       console.log(e);
     }

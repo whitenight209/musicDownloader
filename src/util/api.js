@@ -61,6 +61,10 @@ export const getMusicDetail = (musicId) => {
         infoMapper: {},
         albumHref: ''
       };
+      const lyrics = $('div.lyricsContainer > xmp');
+      if (lyrics.text()) {
+        musicDetail.lyrics = lyrics.text();
+      }
       $('div.basicInfo > table.info > tbody > tr').each((index, tr) => {
         const thElement = $(tr).find('th');
         if (thElement) {

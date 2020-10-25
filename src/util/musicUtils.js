@@ -1,10 +1,11 @@
 import NodeID3 from 'node-id3';
 
-export const writeMetaData = (musicFilePath, title, artist, album, imageData) => {
+export const writeMetaData = (musicFilePath, title, artist, album, imageData, lyrics = '') => {
   NodeID3.write({
     title,
     artist,
     album,
-    image: imageData
+    image: imageData,
+    USLT: lyrics
   }, musicFilePath);
 };

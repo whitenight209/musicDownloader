@@ -1,5 +1,5 @@
-const insertMusic = (db, { bugsId, songName, youtubeId, artistName, albumName, albumCoverImage, albumId, duration }) => {
-  return db('music').insert({ bugsId, name: songName, youtubeId, artistName, albumName, albumCoverImage, albumId, duration });
+const insertMusic = (db, { bugsId, songName, youtubeId, artistName, albumName, albumCoverImage, albumId, duration, lyrics }) => {
+  return db('music').insert({ bugsId, name: songName, youtubeId, artistName, albumName, albumCoverImage, albumId, duration, lyrics });
 };
 const selectMusic = (db, { page = 0, offset = 50 }) => {
   const startIndex = page * offset;
@@ -7,6 +7,9 @@ const selectMusic = (db, { page = 0, offset = 50 }) => {
   console.log(`select music ${startIndex}, ${limit}`);
   return db.select('*').from('music').offset(startIndex).limit(limit);
 };
+const selectAllMusic = (db) => {
+  return db.select('*').from('music');
+}
 const selectMusicTotalCount = db => {
   return db.count('*', { as: 'count' }).from('music');
 }
@@ -22,5 +25,6 @@ export default {
   selectMusic,
   selectMusicById,
   deleteMusic,
-  selectMusicTotalCount
+  selectMusicTotalCount,
+  selectAllMusic
 };

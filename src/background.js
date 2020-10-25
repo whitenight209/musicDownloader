@@ -66,7 +66,8 @@ ipcMain.on(Event.EVENT_INSERT_MUSIC, (event, data) => {
     albumName: musicDetail.albumName,
     albumCoverImage: musicDetail.imgSrc,
     albumId: musicDetail.bugsId,
-    duration: musicDetail.duration
+    duration: musicDetail.duration,
+    lyrics: musicDetail.lyrics
   }).then(data => {
     logger.debug(data);
   }).catch(err => {
@@ -79,10 +80,6 @@ ipcMain.on(Event.EVENT_SELECT_MUSIC, async (e, { page = 0, offset = 30 }) => {
   const totalCount = await database.selectMusicTotalCount(db);
   const musicList = await database.selectMusic(db, { page, offset });
   win.send(Event.EVENT_SELECT_MUSIC, { musicList, totalCount: totalCount[0].count });
-  // musicList.then(musicList => {
-  //   logger.debug(musicList);
-  //   win.send(Event.EVENT_SELECT_MUSIC, musicList);
-  // });
 });
 ipcMain.on(Event.DELETE_STORED_MUSIC, (e, musicId) => {
   logger.debug('EVENT_DELETE_MUSIC');
@@ -118,13 +115,27 @@ ipcMain.on(Event.DOWNLOAD_MUSIC, async (e, { musicId, downloadPath }) => {
   const newMp3FilePath = `${downloadPath}/${music.name.replace(' ', '_')}.mp3`;
   const result = await downloadYoutube(youtubeProcessSender, musicId, libPath, music.youtubeId, music.duration, downloadPath, music.youtubeId);
   const imageData = Buffer.from(await getImage(music.albumCoverImage), 'binary');
-  writeMetaData(mp3FilePath, music.name, music.artistName, music.albumName, imageData);
+  writeMetaData(mp3FilePath, music.name, music.artistName, music.albumName, imageData, music.lyrics);
   logger.debug(`download music ${music.name} result ${result}`);
   fs.renameSync(mp3FilePath, newMp3FilePath);
 });
 ipcMain.on(Event.INIT_CONFIG, () => {
   win.send(Event.INIT_CONFIG, config);
 });
+
+ipcMain.on(Event.EVENT_MUSIC_BACKUP_REQUEST, async (backupPath) => {
+  await backupMusicDatabase(db, backupPath);
+});
+
+const backupMusicDatabase = async (db, backupPath) => {
+  const fileName = 'backup.json';
+  const musicList = await database.selectAllMusic(db);
+  fs.writeFile(path.join(backupPath, fileName), musicList, (err) => {
+    if (err) throw err;
+    console.log('The file has been saved!');
+  });
+}
+
 const createYoutubeWindow = async (musicId) => {
   if (!youtubeWindow) {
     youtubeWindow = new BrowserWindow({

@@ -1,6 +1,13 @@
 <template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
   <div>
-    {{musicDetail}}
+    <template v-if="musicDetail.musicDetail">
+      <p>선택된 노래</p>
+      <img :src="musicDetail.musicDetail.imgSrc" width="50px"/>
+      {{musicDetail.musicDetail.songName}}
+      {{musicDetail.musicDetail.artist[0]}}
+      {{musicDetail.musicDetail.duration}}
+    </template>
+<!--    {{musicDetail}}-->
     <v-container>
       <v-row>
         <v-col class="mr-0 pr-0">

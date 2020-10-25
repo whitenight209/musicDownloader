@@ -23,7 +23,7 @@
 
 <script>
 import Event from '@/Event';
-import { mapGetters } from 'vuex';
+import { mapGetters, mapActions } from 'vuex';
 import { mdiBriefcaseDownloadOutline, mdiDeleteCircle } from '@mdi/js';
 const { ipcRenderer } = window.require('electron');
 
@@ -33,6 +33,8 @@ export default {
     ipcRenderer.on(Event.EVENT_REFRESH_ITEMS, this.refreshMusic);
     ipcRenderer.on(Event.EVENT_SELECT_MUSIC, this.setMusicList);
     ipcRenderer.on(Event.EVENT_SEND_DOWNLOAD_SONG_PROGRESS, this.downloadProcess);
+    this.initAppBar();
+    this.setAppBarFlag(true);
   },
   mounted () {
     console.log('mounted');
@@ -41,6 +43,7 @@ export default {
   beforeDestroy () {
     ipcRenderer.removeAllListeners(Event.EVENT_SELECT_MUSIC);
     ipcRenderer.removeAllListeners(Event.EVENT_REFRESH_ITEMS);
+    this.setAppBarFlag(false);
     console.log('destroy');
   },
   computed: {
@@ -65,6 +68,12 @@ export default {
     };
   },
   methods: {
+    ...mapActions(
+      {
+        setAppBarFlag: 'setAppBarFlag',
+        setAppBar: 'setAppBar'
+      }
+    ),
     downloadSong (id) {
       console.log(`downlaod song id ${id}`);
       const downloadPath = this.getDownloadPath;
@@ -87,6 +96,12 @@ export default {
     },
     downloadProcess (e, data) {
       console.log(data);
+    },
+    initAppBar () {
+      const appBar = [];
+      appBar.push({ title: 'backup', callback: () => {} });
+      appBar.push({ title: 'open', callback: () => { ipcRenderer.send(Event.OPEN_FILE_DIALOG); } });
+      this.setAppBar(appBar);
     }
   }
 };
