@@ -35,13 +35,13 @@
         <template v-slot:body="{ items }">
           <tbody>
           <tr v-for="item in items" :key="item.key">
-            <td><img width="50px" :src="item.albumCoverUrl"/></td>
-            <td>{{item.songName}}</td>
-            <td>{{item.artistName}}</td>
-            <td>{{item.albumName}}</td>
+            <td><img class="table-image" width="50px" :src="item.albumCoverUrl"/></td>
+            <td class="table-text">{{item.songName}}</td>
+            <td class="table-text">{{item.artistName}}</td>
+            <td class="table-text">{{item.albumName}}</td>
             <td>
-              <v-btn @click="openYoutubeWindow(item.key)" small color="primary">
-                <v-icon>{{icons.mdiYoutube}}</v-icon>
+              <v-btn icon @click="openYoutubeWindow(item.key)" small color="primary">
+                <v-icon large>{{icons.mdiYoutube}}</v-icon>
               </v-btn>
             </td>
           </tr>
@@ -120,5 +120,12 @@ export default {
   }
   .search-type {
     width: 100px;
+  }
+  .table-text {
+    font-size: 12px;
+  }
+  .table-image {
+    border-radius: 50%;
+    border: 1px solid black;
   }
 </style>
