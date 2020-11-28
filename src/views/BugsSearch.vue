@@ -1,38 +1,36 @@
 <template>
   <div>
-    <v-container>
-      <v-row >
+      <v-row class="search-area">
         <v-col>
           <v-text-field
+            v-on:keyup.enter="bugsSearch"
+            class="bugs-input mr-3 d-inline-flex"
+            height="30"
             v-model="songName"
             label="노래 이름"
             required
           ></v-text-field>
-        </v-col>
-        <v-col>
-          <v-btn @click="bugsSearch">search</v-btn>
+          <div class="d-inline-flex">
+            <v-select
+              label="검색 타입"
+              class="search-type"
+              v-model="selectedSearchType"
+              :items="searchType"
+              item-text="text"
+              item-value="value"
+            />
+          </div>
+          <v-btn icon class="ml-2 d-inline-block" height="30px" @click="bugsSearch">
+            <v-icon large>{{icons.databaseSearch}}</v-icon>
+          </v-btn>
         </v-col>
       </v-row>
-      <v-radio-group
-        v-model="searchType"
-        row
-      >
-        <v-radio
-          label="전체"
-          value='ARTIST_TRACK_ALBUM'
-        ></v-radio>
-        <v-radio
-          label="앨범명"
-          value="ALBUM_ONLY"
-        ></v-radio>
-        <v-radio
-          label="가수명"
-          value="ARTIST_ONLY"
-        ></v-radio>
-      </v-radio-group>
       <v-data-table
         :headers="headers"
         :items="items.songList"
+        :loading="isLoading"
+        items-per-page="50"
+        hide-default-footer
       >
         <template v-slot:body="{ items }">
           <tbody>
@@ -50,13 +48,12 @@
           </tbody>
         </template>
       </v-data-table>
-    </v-container>
   </div>
 </template>
 
 <script>
 import { searchBugsSong } from '@/util/api';
-import { mdiYoutube } from '@mdi/js';
+import { mdiYoutube, mdiDatabaseSearch } from '@mdi/js';
 
 export default {
   name: 'BugsSearch',
@@ -80,19 +77,28 @@ export default {
         pageOffset: 10
       },
       icons: {
-        mdiYoutube: mdiYoutube
+        mdiYoutube: mdiYoutube,
+        databaseSearch: mdiDatabaseSearch
       },
-      searchType: 'ARTIST_TRACK_ALBUM'
+      searchType: [
+        { text: '전체', value: 'ARTIST_TRACK_ALBUM' },
+        { text: '앨범', value: 'ALBUM_ONLY' },
+        { text: '가수', value: 'ARTIST_ONLY' }
+      ],
+      selectedSearchType: 'ARTIST_TRACK_ALBUM',
+      isLoading: false
     };
   },
   methods: {
     async bugsSearch () {
-      const items = await searchBugsSong(this.songName, this.searchType);
+      this.isLoading = true;
+      const items = await searchBugsSong(this.songName, this.selectedSearchType);
       this.items = items;
       const selectedPage = items.pageList.filter(page => page.isSelected)[0];
       const startIndex = items.pageList[0];
       const pageOffset = items.pageList.length;
       this.pagination = { selectedPage, startIndex, pageOffset };
+      this.isLoading = false;
     },
     async openYoutubeWindow (musicId) {
       console.log(musicId);
@@ -105,5 +111,14 @@ export default {
 </script>
 
 <style scoped>
-
+  .bugs-input {
+    font-size: 13px;
+    width: 300px;
+  }
+  .search-area {
+    height: 60px;
+  }
+  .search-type {
+    width: 100px;
+  }
 </style>

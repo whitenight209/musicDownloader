@@ -16,8 +16,8 @@ import { ipcRenderer } from "electron"
             <td class="table-item">{{item.artistName}}</td>
             <td class="table-item">{{item.albumName}}</td>
             <td>
-              <v-btn @click="openYoutubeWindow(item.key)" small color="primary">
-                <v-icon>{{icons.mdiYoutube}}</v-icon>
+              <v-btn icon @click="openYoutubeWindow(item.key)" medium color="primary">
+                <v-icon large>{{icons.mdiYoutube}}</v-icon>
               </v-btn>
             </td>
           </tr>
