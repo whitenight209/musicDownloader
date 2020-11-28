@@ -9,18 +9,18 @@ import { ipcRenderer } from "electron"
     >
       <template v-slot:body="{ items }">
         <tbody>
-        <tr v-for="item in items" :key="item.key">
-          <td align="center">{{ item.ranking }}</td>
-          <td><img width="50px" :src="item.albumCoverUrl"/></td>
-          <td>{{item.songName}}</td>
-          <td>{{item.artistName}}</td>
-          <td>{{item.albumName}}</td>
-          <td>
-            <v-btn @click="openYoutubeWindow(item.key)" small color="primary">
-              <v-icon>{{icons.mdiYoutube}}</v-icon>
-            </v-btn>
-          </td>
-        </tr>
+          <tr v-for="item in items" :key="item.key">
+            <td class="table-item" align="center">{{ item.ranking }}</td>
+            <td class="table-item"><img class="music-image" width="40px" :src="item.albumCoverUrl"/></td>
+            <td class="table-item">{{item.songName}}</td>
+            <td class="table-item">{{item.artistName}}</td>
+            <td class="table-item">{{item.albumName}}</td>
+            <td>
+              <v-btn @click="openYoutubeWindow(item.key)" small color="primary">
+                <v-icon>{{icons.mdiYoutube}}</v-icon>
+              </v-btn>
+            </td>
+          </tr>
         </tbody>
       </template>
     </v-data-table>
@@ -74,3 +74,12 @@ export default {
   }
 };
 </script>
+<style scoped>
+  .table-item {
+    font-size: 11px;
+  }
+  .music-image {
+    border-radius: 50%;
+    border: 1px solid black;
+  }
+</style>
