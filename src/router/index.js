@@ -5,6 +5,8 @@ import YoutubePlayer from '@/views/YoutubePlayer';
 import StoredMusic from '@/views/StoredMusic';
 import YoutubeSearch from '@/views/YoutubeSearch';
 import BugsSearch from '@/views/BugsSearch';
+import Setting from '@/views/Setting';
+import DownloadMonitor from '@/views/DownloadMonitor';
 
 Vue.use(VueRouter);
 
@@ -36,8 +38,17 @@ const routes = [
     path: '/stored',
     name: 'Stored',
     component: StoredMusic
+  },
+  {
+    path: '/settings',
+    name: 'Settings',
+    component: Setting
+  },
+  {
+    path: '/monitor',
+    name: 'monitor',
+    component: DownloadMonitor
   }
-
 ];
 
 const router = new VueRouter({

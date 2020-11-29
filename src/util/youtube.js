@@ -16,21 +16,15 @@ export const downloadYoutube = (callBack, musicId, libPath, youtubeId, duration,
         return percentage / 2;
       }
       return null;
-    }
+    };
     const logger = new Logger();
     const youtubeCommand = makeCommand(libPath, youtubeId, duration, downloadPath, fileName);
     const youtubeDl = spawn(youtubeCommand.command, youtubeCommand.args);
     youtubeDl.stdout.on('data', (data) => {
-      // console.log('test ' + data.toString());
-      // console.log(data.toString().length);
-      // console.log('test');
-      // logger.debug(`stdout: ${data.toString()}`);
       const percentage = outputAnalyzer(data.toString());
       if (percentage) {
         callBack(musicId, percentage);
       }
-      // outputAnalzyer(data);
-      // logger.debug(`stdout: ${data}`);
     });
 
     youtubeDl.stderr.on('data', (data) => {
@@ -54,16 +48,14 @@ const makeCommand = (libPath, youtubeId, duration, downloadPath, fileName) => {
   args.push('--audio-format');
   args.push('mp3');
   args.push('--audio-quality');
-  args.push('0');
+  args.push('1');
   args.push('--ffmpeg-location');
   args.push(libPath);
   args.push('-o');
-  args.push(`${downloadPath}/${youtubeId}.%(ext)s`);
+  args.push(`${downloadPath}/${youtubeId}.%(ext)s`)
   args.push(`${YOUTUBE_URL}${youtubeId}`);
-  // TODO : 나중에 duration 설정도 가능하게 변경 할 것.
-  // args.push('--postprocessor-args');
-  // args.push('-t');
-  // args.push(`${duration}`);
+  args.push('--postprocessor-args');
+  args.push(` -t ${duration}`);
   return { command, args };
 };
 export default {

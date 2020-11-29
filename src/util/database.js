@@ -13,7 +13,7 @@ const selectAllMusic = (db) => {
 const selectMusicTotalCount = db => {
   return db.count('*', { as: 'count' }).from('music');
 }
-const selectMusicById = (db, musicId) => {
+export const selectMusicById = (db, musicId) => {
   return db.select('*').from('music').where({ id: musicId });
 };
 export const deleteMusic = (db, musicId) => {

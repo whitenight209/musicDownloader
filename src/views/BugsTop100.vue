@@ -76,7 +76,7 @@ export default {
 </script>
 <style scoped>
   .table-item {
-    font-size: 11px;
+    font-size: 12px !important;
   }
   .music-image {
     border-radius: 50%;

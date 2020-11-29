@@ -22,9 +22,14 @@ export const utilBehindFromToday = (date) => {
 };
 export const youtubeDurationConverter = (duration) => {
   let durationStr = duration.substring(2);
-
   durationStr = durationStr.replace(/H/, '시간');
   durationStr = durationStr.replace(/M/, '분');
   durationStr = durationStr.replace(/S/, '초');
   return durationStr;
+};
+export const bugsDurationConverter = (duration) => {
+  const arr = duration.split(':');
+  const minute = parseInt(arr[0]);
+  const second = parseInt(arr[1]) + 1;
+  return `${minute}분${second}초`;
 };

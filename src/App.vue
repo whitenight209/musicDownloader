@@ -45,15 +45,15 @@
       </v-list>
     </v-navigation-drawer>
 
-    <v-app-bar v-if="useAppBarFlag" app>
-      <template v-for="(item, index) in appBar">
-        <v-btn :key="index" @click="item.callback">{{item.title}}</v-btn>
-      </template>
+<!--    <v-app-bar v-if="useAppBarFlag" app>-->
+<!--      <template v-for="(item, index) in appBar">-->
+<!--        <v-btn :key="index" @click="item.callback">{{item.title}}</v-btn>-->
+<!--      </template>-->
 <!--      <v-btn to="/">home</v-btn>-->
 <!--      <v-btn to="/stored">stored</v-btn>-->
 <!--      <v-btn @click="openYoutubeWindow">youtube</v-btn>-->
 <!--      <v-btn @click="openDialog">open</v-btn>-->
-    </v-app-bar>
+<!--    </v-app-bar>-->
 
     <!-- Sizes your content based upon application components -->
     <v-content>

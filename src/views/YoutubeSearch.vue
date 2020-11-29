@@ -2,10 +2,12 @@
   <div>
     <template v-if="musicDetail.musicDetail">
       <p>선택된 노래</p>
-      <img :src="musicDetail.musicDetail.imgSrc" width="50px"/>
-      {{musicDetail.musicDetail.songName}}
-      {{musicDetail.musicDetail.artist[0]}}
-      {{musicDetail.musicDetail.duration}}
+      <div class="d-inline-flex">
+        <img :src="musicDetail.musicDetail.imgSrc" width="50px"/>
+        {{musicDetail.musicDetail.songName}}
+        {{musicDetail.musicDetail.artist[0]}}
+        {{musicDetail.musicDetail.duration}}
+      </div>
     </template>
 <!--    {{musicDetail}}-->
     <v-container>
@@ -36,6 +38,8 @@
         <v-data-table
           :headers="headers"
           :items="items"
+          :loading="loading.isLoading"
+          :loading-text="loading.loadingText"
         >
           <template v-slot:body="{ items }">
             <tbody>
@@ -48,7 +52,8 @@
               </td>
               <td>{{item.snippet.title}}</td>
               <td>{{item.snippet.publishedAt}}</td>
-              <td>{{item.contentDetails.durationStr}}</td>
+              <td class="blue--text" v-if="bugsDurationStr === item.contentDetails.durationStr">{{item.contentDetails.durationStr}}</td>
+              <td v-else>{{item.contentDetails.durationStr}}</td>
               <td>
                 <v-btn icon @click="saveMusic(item.id)"><v-icon>{{icons.download}}</v-icon></v-btn>
               </td>
@@ -66,6 +71,8 @@ import { mapGetters, mapActions } from 'vuex';
 import { mdiYoutube, mdiCloseBoxMultiple, mdiDownloadBox } from '@mdi/js';
 import { searchYoutube } from '@/util/api';
 import Event from '@/Event';
+import { bugsDurationConverter } from '@/util/util';
+import Logger from '@/Logger';
 const { ipcRenderer } = window.require('electron');
 
 export default {
@@ -84,12 +91,17 @@ export default {
         close: mdiCloseBoxMultiple,
         download: mdiDownloadBox
       },
+      loading: {
+        isLoading: false,
+        loadingText: 'loading youtube items'
+      },
       songName: '',
       items: [],
       pageInfo: {},
       nextPageToken: '',
       prevPageToken: '',
-      currentYoutubeId: ''
+      currentYoutubeId: '',
+      bugsDurationStr: ''
     };
   },
   computed: {
@@ -102,7 +114,9 @@ export default {
     ...mapActions({ getMusicDetail: 'getMusicDetail' }),
     async search () {
       console.log(this.songName);
+      this.loading.isLoading = true;
       const youtubeList = await searchYoutube('AIzaSyB73lB6nwGd55DT4LjTikhkIfMluml7fKc', this.songName);
+      this.loading.isLoading = false;
       console.log(youtubeList);
       this.pageInfo = youtubeList.pageInfo;
       this.items = youtubeList.items;
@@ -123,14 +137,26 @@ export default {
       ipcRenderer.send(Event.EVENT_INSERT_MUSIC, musicDetailData);
     }
   },
+  created () {
+    ipcRenderer.on(Event.EVENT_INSERT_MUSIC, (e, result) => {
+      if (result === Event.SUCCESS) {
+        Logger.debug('save Success');
+      } else {
+        Logger.debug('save Failed');
+      }
+    });
+  },
   async mounted () {
     const queryParams = this.$route.query;
     if (queryParams.bugsId) {
       await this.getMusicDetail(queryParams.bugsId);
     }
     if (this.musicDetail.musicDetail) {
-      this.songName = `${this.musicDetail.musicDetail.songName}`;
+      const bugsDurationStr = bugsDurationConverter(this.musicDetail.musicDetail.duration);
+      this.bugsDurationStr = bugsDurationStr;
+      this.songName = `${this.musicDetail.musicDetail.artist[0]}-${this.musicDetail.musicDetail.songName}`;
     }
+    this.search();
   }
 };
 </script>

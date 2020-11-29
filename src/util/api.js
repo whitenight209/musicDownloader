@@ -14,11 +14,11 @@ export const getImage = async (url) => {
   }).then(res => res.data);
 };
 
-export const searchBugsSong = (keyword, option = 'ARTIST_TRACK_ALBUM', page_number = 1) => {
+export const searchBugsSong = (keyword, option, pageNumber) => {
   return axios.get('https://music.bugs.co.kr/search/track', {
     params: {
       q: keyword,
-      page: page_number,
+      page: pageNumber,
       target: option,
       flac_only: 'false',
       sort: 'A'

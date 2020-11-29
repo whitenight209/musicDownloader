@@ -35,7 +35,7 @@
         <template v-slot:body="{ items }">
           <tbody>
           <tr v-for="item in items" :key="item.key">
-            <td><img class="table-image" width="50px" :src="item.albumCoverUrl"/></td>
+            <td height="50px"><img class="table-image" width="50px" :src="item.albumCoverUrl"/></td>
             <td class="table-text">{{item.songName}}</td>
             <td class="table-text">{{item.artistName}}</td>
             <td class="table-text">{{item.albumName}}</td>
@@ -62,9 +62,9 @@ export default {
       songName: '',
       headers: [
         { text: '', value: '' },
-        { text: '앨범', value: 'albumName' },
         { text: '노래', value: 'songName' },
         { text: '가수', value: 'artistName' },
+        { text: '앨범', value: 'albumName' },
         { text: '', value: '' }
       ],
       items: {
@@ -122,7 +122,7 @@ export default {
     width: 100px;
   }
   .table-text {
-    font-size: 12px;
+    font-size: 12px !important;
   }
   .table-image {
     border-radius: 50%;

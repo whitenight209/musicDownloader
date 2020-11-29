@@ -100,20 +100,21 @@ ipcMain.on(Event.OPEN_FILE_DIALOG, e => {
     });
 });
 
-ipcMain.on(Event.DOWNLOAD_MUSIC, async (e, { musicId, downloadPath }) => {
+ipcMain.on(Event.DOWNLOAD_MUSIC, async (e, { id, downloadPath }) => {
   const youtubeProcessSender = (musicId, progress) => {
     console.log(`${musicId} ${progress} is sended`);
     win.send(Event.EVENT_SEND_DOWNLOAD_SONG_PROGRESS, { musicId, progress });
   };
   logger.debug('EVENT_SELET_MUSIC');
-  logger.debug(`music id ${musicId}`);
-  let music = await database.selectMusicById(db, musicId);
+  logger.debug(`music id ${id}`);
+  let music = await database.selectMusicById(db, id);
   music = music[0];
   logger.debug(music);
   const libPath = getResourcePath('lib');
   const mp3FilePath = `${downloadPath}/${music.youtubeId}.mp3`;
-  const newMp3FilePath = `${downloadPath}/${music.name.replace(' ', '_')}.mp3`;
-  const result = await downloadYoutube(youtubeProcessSender, musicId, libPath, music.youtubeId, music.duration, downloadPath, music.youtubeId);
+  const newMp3FilePath = `${downloadPath}/${music.artistName.replace(' ', '_')}_${music.name.replace(' ', '_')}.mp3`;
+  const result = await downloadYoutube(youtubeProcessSender, id, libPath, music.youtubeId, music.duration, downloadPath, music.youtubeId);
+  console.log(music.albumCoverImage);
   const imageData = Buffer.from(await getImage(music.albumCoverImage), 'binary');
   writeMetaData(mp3FilePath, music.name, music.artistName, music.albumName, imageData, music.lyrics);
   logger.debug(`download music ${music.name} result ${result}`);
