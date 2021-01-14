@@ -29,7 +29,7 @@
         :headers="headers"
         :items="items.songList"
         :loading="isLoading"
-        items-per-page="50"
+        :items-per-page=50
         hide-default-footer
       >
         <template v-slot:body="{ items }">

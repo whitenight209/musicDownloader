@@ -1,13 +1,14 @@
 <template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
   <div>
     <div>
-      <div class="d-inline-flex item-text">다운로드 경로 : {{getDownloadPath}}</div>
+      <div class="d-inline-flex item-text">다운로드 경로 :</div>
       <v-btn icon @click="openFileChooser">
         <v-icon>{{icons.mdiFolderOpen}}</v-icon>
       </v-btn>
+      <div class="d-inline-flex item-text">{{getDownloadPath}}</div>
     </div>
     <v-data-table
-      :items="musicList"
+      :items="storedMusicList"
       :headers="headers"
       :items-per-page="offset"
       hide-default-footer
@@ -22,6 +23,14 @@
             </td>
             <img v-else-if="header.type === 'image'" class="d-block d-sm-table-cell" :key="headerIndex"
                  :src="item[header.value]" :width="header.width"/>
+            <td v-else-if="header.type ==='percentage'" class="d-block d-sm-table-cell" :key="headerIndex">
+              <v-progress-linear
+                color="light-blue"
+                height="10"
+                :value="item.percentage"
+                striped
+              ></v-progress-linear>
+            </td>
             <td v-else-if="header.type === 'button'" :key="headerIndex"
                 :width="header.width ? header.width +'px' : '25px'" class="d-block d-sm-table-cell">
               <v-btn @click="header.cback(item[header.value])" small color="secondary">
@@ -34,6 +43,8 @@
         </tr>
       </template>
     </v-data-table>
+    <div style="width: 50px">
+    </div>
   </div>
 </template>
 
@@ -64,7 +75,9 @@ export default {
   },
   computed: {
     ...mapGetters({
-      getDownloadPath: 'downloadPath'
+      getDownloadPath: 'downloadPath',
+      processList: 'processList',
+      storedMusicList: 'getStoredMusicList'
     })
   },
   data () {
@@ -76,6 +89,7 @@ export default {
         { text: 'artist', value: 'artistName', sortable: false },
         { text: 'album', value: 'albumName', sortable: false },
         { text: '', value: '', sortable: false },
+        { text: 'percentage', value: 'percentage', type: 'percentage', sortable: false },
         {
           text: 'download',
           value: 'id',
@@ -95,6 +109,12 @@ export default {
       }
     };
   },
+  watch: {
+    storedMusicList (data) {
+      console.log(data);
+      console.log('storedMusicList updated');
+    }
+  },
   methods: {
     ...mapActions(
       {
@@ -102,7 +122,7 @@ export default {
         setAppBar: 'setAppBar',
         addDownload: 'addDownload',
         addDownloads: 'addDownloads',
-        processList: 'getProcessList'
+        setStoredMusicList: 'setStoredMusicList'
       }
     ),
     downloadSong (id) {
@@ -113,14 +133,12 @@ export default {
         return;
       }
       ipcRenderer.send(Event.DOWNLOAD_MUSIC, { id, downloadPath });
-      const selectedMusic = this.musicList.filter(music => music.id === id)[0];
+      const selectedMusic = this.storedMusicList.filter(music => music.id === id)[0];
       selectedMusic.progress = 0;
-      this.addDownload(selectedMusic);
+      this.addDownload({ id, percentage: 0 });
     },
     setMusicList (e, data) {
-      this.musicList = data.musicList;
-      this.totalCount = data.totalCount;
-      console.log(data);
+      this.setStoredMusicList(data);
     },
     deleteMusic (id) {
       ipcRenderer.send(Event.DELETE_STORED_MUSIC, id);
@@ -128,21 +146,6 @@ export default {
     refreshMusic () {
       ipcRenderer.send(Event.EVENT_SELECT_MUSIC, {});
     },
-    // initAppBar () {
-    //   const appBar = [];
-    //   appBar.push({
-    //     title: 'backup',
-    //     callback: () => {
-    //     }
-    //   });
-    //   appBar.push({
-    //     title: 'open',
-    //     callback: () => {
-    //       ipcRenderer.send(Event.OPEN_FILE_DIALOG);
-    //     }
-    //   });
-    //   this.setAppBar(appBar);
-    // },
     onCheckBoxClick (music) {
       console.log(music);
     },

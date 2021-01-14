@@ -6,64 +6,57 @@
       :update:mini-variant="eventTest"
       app
       permanent
-      v-model="drawer"
-      :mini-variant.sync=mini
-      v-if="useMenu"
-      expand-on-hover=""
+      fixed
+      absolute
+      width="150"
     >
-      <v-list>
-        <template v-for="(item, i) in items">
-          <v-list-group v-if="item.menu" :key="i" :prepend-icon="item.icon" value="true" no-action>
-            <template v-slot:activator>
-              <v-list-item-content>
-                <v-list-item-title>{{item.title}}</v-list-item-title>
-              </v-list-item-content>
-            </template>
-              <v-list-item :key="subIndex" v-for="(subMenu, subIndex) in item.menu" link :to="subMenu.link">
-                <v-list-item-icon>
-                  <v-icon>{{ subMenu.icon }}</v-icon>
-                </v-list-item-icon>
-                <v-list-item-content>
-                  <v-list-item-title>{{ subMenu.title }}</v-list-item-title>
-                </v-list-item-content>
-              </v-list-item>
-          </v-list-group>
-          <v-list-item
-            v-else
-            :key="i"
-            link
-            :to="item.link ? item.link : ''"
-          >
-            <v-list-item-icon>
-              <v-icon>{{ item.icon }}</v-icon>
-            </v-list-item-icon>
-            <v-list-item-content>
-              <v-list-item-title>{{ item.title }}</v-list-item-title>
-            </v-list-item-content>
-          </v-list-item>
-        </template>
+      <v-list-item>
+        <v-list-item-content>
+          <v-list-item-title class="title">
+            <span>
+              Music
+            </span>
+            <div>
+              Downloader
+            </div>
+          </v-list-item-title>
+          <v-list-item-subtitle>
+            v0.0.1 alpha
+          </v-list-item-subtitle>
+        </v-list-item-content>
+      </v-list-item>
+      <v-list
+        dense
+        nav
+      >
+        <v-list-item
+          v-for="item in items"
+          :key="item.title"
+          link
+          :to="item.link ? item.link : ''"
+        >
+          <v-list-item-icon class="mr-3" v-if="item.type === 'component'">
+            <component :is="item.component"></component>
+          </v-list-item-icon>
+          <v-list-item-icon class="mr-3" v-else>
+            <v-icon :color="item.color">{{ item.icon }}</v-icon>
+          </v-list-item-icon>
+          <v-list-item-content>
+            <v-list-item-title>{{ item.title }}</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
       </v-list>
     </v-navigation-drawer>
-
-<!--    <v-app-bar v-if="useAppBarFlag" app>-->
-<!--      <template v-for="(item, index) in appBar">-->
-<!--        <v-btn :key="index" @click="item.callback">{{item.title}}</v-btn>-->
-<!--      </template>-->
-<!--      <v-btn to="/">home</v-btn>-->
-<!--      <v-btn to="/stored">stored</v-btn>-->
-<!--      <v-btn @click="openYoutubeWindow">youtube</v-btn>-->
-<!--      <v-btn @click="openDialog">open</v-btn>-->
-<!--    </v-app-bar>-->
-
     <!-- Sizes your content based upon application components -->
-    <v-content>
-
+    <v-main>
+      <div>
+      </div>
       <!-- Provides the application the proper gutter -->
       <v-container fluid>
         <!-- If using vue-router -->
         <router-view></router-view>
       </v-container>
-    </v-content>
+    </v-main>
 
     <v-footer app>
       made by chpark
@@ -72,22 +65,27 @@
 </template>
 
 <script>
-import { mdiMusicCircle, mdiYoutube, mdiFolderMusic, mdiCardSearch, mdiPoll } from '@mdi/js';
+import { mdiYoutube, mdiFolderMusic, mdiPoll } from '@mdi/js';
+import BugsIcon from '@/components/BugsIcon';
 import Event from '@/Event';
 import { mapGetters, mapActions } from 'vuex';
 
 const { ipcRenderer } = window.require('electron');
 export default {
-
+  components: {
+    BugsIcon
+  },
   name: 'App',
   created () {
-    console.log(this.$route);
     ipcRenderer.on(Event.OPEN_FILE_DIALOG, (e, downloadPath) => {
       this.setDownloadPath(downloadPath);
     });
     ipcRenderer.on(Event.INIT_CONFIG, (e, config) => {
       console.log(config);
       this.setConfig(config);
+    });
+    ipcRenderer.on(Event.EVENT_SEND_DOWNLOAD_SONG_PROGRESS, (e, process) => {
+      this.updateProcess(process);
     });
     ipcRenderer.send(Event.INIT_CONFIG);
     this.$route.query.appBar === 'true' ? this.setAppBarFlag(true) : this.setAppBarFlag(false);
@@ -113,7 +111,8 @@ export default {
         setDownloadPath: 'setDownloadPath',
         setAppBarFlag: 'setAppBarFlag',
         setMenuFlag: 'setMenuFlag',
-        setConfig: 'setConfig'
+        setConfig: 'setConfig',
+        updateProcess: 'updateProcess'
       }
     ),
     eventTest (e) {
@@ -126,21 +125,14 @@ export default {
       drawer: true,
       items: [
         {
-          title: 'Bugs',
-          icon: mdiMusicCircle,
-          menu: [
-            { title: 'top100', icon: mdiPoll, link: '/' },
-            { title: 'search', icon: mdiCardSearch, link: '/bugs/search' }
-          ]
+          title: 'top100',
+          icon: mdiPoll,
+          link: '/',
+          color: 'blue'
         },
-        {
-          title: 'Youtube',
-          icon: mdiYoutube,
-          menu: [
-            { title: 'search', icon: mdiYoutube, link: '/youtube/search' }
-          ]
-        },
-        { title: 'Stored', icon: mdiFolderMusic, link: '/stored' }
+        { title: 'Bugs 검색', type: 'component', component: BugsIcon, link: '/bugs/search' },
+        { title: 'Youtube 검색', color: 'red', icon: mdiYoutube, link: '/youtube/search' },
+        { title: '저장된 노래', color: 'purple', icon: mdiFolderMusic, link: '/stored' }
       ]
     };
   }

@@ -11,7 +11,9 @@ export default new Vuex.Store({
     useAppBar: false,
     downloadPath: undefined,
     useMenu: true,
-    config: {},
+    config: {
+      youtubeApiKey: ''
+    },
     appBar: [],
     bugsSearchItems: {
       searchParameters: {
@@ -28,7 +30,8 @@ export default new Vuex.Store({
         }
       }
     },
-    processList: []
+    processList: [],
+    storedMusicList: []
   },
   mutations: {
     setBugsSearchResult (state, musicList) {
@@ -66,30 +69,16 @@ export default new Vuex.Store({
       state.bugsSearchItems.searchParameters.searchType = searchType;
     },
     updateProcess (state, processUpdate) {
-      const findByMusicId = process => process.id === processUpdate.id;
-      const index = state.processList.findIndex(findByMusicId);
-      console.log(state.processList);
+      const { musicId, percentage } = processUpdate;
+      const findByMusicId = process => process.id === musicId;
+      const index = state.storedMusicList.findIndex(findByMusicId);
       console.log(processUpdate);
       console.log(index);
       if (index >= 0) {
-        console.log('update process');
-        if (processUpdate.progress === 100) {
-          console.log('process 100%');
-          state.processList = state.processList.filter(process => process.id !== processUpdate.id);
-        } else {
-          console.log(processUpdate.progress);
-          console.log('update process id ' + index);
-          const newState = { ...state.processList[index], progress: processUpdate.progress };
-          console.log(state.processList[index]);
-          Vue.set(state.processList, index, newState);
-        }
-      } else {
-        console.log('push process');
-        state.processList.push(processUpdate);
+        const newItem = Object.assign({}, state.storedMusicList[index]);
+        newItem.percentage = percentage;
+        Vue.set(state.storedMusicList, index, newItem);
       }
-      // console.log(processUpdate);
-      // console.log('-------');
-      // console.log(state.processList);
     },
     addMusicDownload (state, musicItem) {
       const findByMusicId = process => process.id === musicItem.id;
@@ -100,6 +89,9 @@ export default new Vuex.Store({
     },
     addMusicDownloads (state, musicItems) {
       state.processList.push(...musicItems);
+    },
+    setStoredMusicList (state, data) {
+      state.storedMusicList = data.musicList;
     }
   },
   actions: {
@@ -155,6 +147,9 @@ export default new Vuex.Store({
     },
     addDownloads ({ commit }, musicItems) {
       commit('addMusicDownloads', musicItems);
+    },
+    setStoredMusicList ({ commit }, data) {
+      commit('setStoredMusicList', data);
     }
   },
   modules: {
@@ -193,8 +188,11 @@ export default new Vuex.Store({
     getNotifications (state) {
       return state.notifications.map(n => n.row);
     },
-    getProcessList (state) {
+    processList (state) {
       return state.processList;
+    },
+    getStoredMusicList (state) {
+      return state.storedMusicList;
     }
   }
 });

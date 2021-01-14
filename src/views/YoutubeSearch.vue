@@ -10,28 +10,29 @@
       </div>
     </template>
 <!--    {{musicDetail}}-->
-    <v-container>
-      <v-row>
+    <v-container class="pt-0">
+      <v-row v-if="currentYoutubeId">
         <v-col class="mr-0 pr-0">
           <iframe id="ytplayer" type="text/html" width="640" height="360"
                   :src=youtubeUrl
-                  v-if="currentYoutubeId"
                   frameborder="0"></iframe>
         </v-col>
         <v-col class="ml-0 pl-0">
           <v-btn icon v-if="currentYoutubeId" @click="closeYoutubePlayer"><v-icon>{{icons.close}}</v-icon></v-btn>
         </v-col>
       </v-row>
-      <v-row >
-        <v-col>
+      <v-row  style="height: 50px" >
+        <v-col class="pr-0">
           <v-text-field
+            class="pt-0"
             v-model="songName"
             label="노래 이름"
+            style="font-size: 13px !important;"
             required
           ></v-text-field>
         </v-col>
-        <v-col>
-          <v-btn @click="search">search</v-btn>
+        <v-col class="pl-1 pt-5">
+          <v-btn class="pt-0" small @click="search">search</v-btn>
         </v-col>
       </v-row>
       <v-row>
@@ -44,17 +45,17 @@
           <template v-slot:body="{ items }">
             <tbody>
             <tr v-for="item in items" :key="item.id">
-              <td @click="youtubeItemClick(item.id)">
+              <td @click="youtubeItemClick(item.id)" style="width: 110px">
                 <div class="thumbnail">
                   <img class="image" width="70px" :src="item.snippet.thumbnails.high.url"/>
                   <v-icon color="red" class="middle">{{icons.youtube}}</v-icon>
                 </div>
               </td>
-              <td>{{item.snippet.title}}</td>
-              <td>{{item.snippet.publishedAt}}</td>
-              <td class="blue--text" v-if="bugsDurationStr === item.contentDetails.durationStr">{{item.contentDetails.durationStr}}</td>
-              <td v-else>{{item.contentDetails.durationStr}}</td>
-              <td>
+              <td class="columnText" style="width: 550px">{{item.snippet.title.substring(0, 80)}}</td>
+              <td class="columnText">{{item.snippet.publishedAt.substring(0,10)}}</td>
+              <td class="blue--text columnText" v-if="bugsDurationStr === item.contentDetails.durationStr">{{item.contentDetails.durationStr}}</td>
+              <td class="columnText" v-else>{{item.contentDetails.durationStr}}</td>
+              <td style="width: 50px">
                 <v-btn icon @click="saveMusic(item.id)"><v-icon>{{icons.download}}</v-icon></v-btn>
               </td>
             </tr>
@@ -105,7 +106,7 @@ export default {
     };
   },
   computed: {
-    ...mapGetters({ musicDetail: 'getMusicDetail' }),
+    ...mapGetters({ musicDetail: 'getMusicDetail', config: 'getConfig' }),
     youtubeUrl () {
       return `https://www.youtube.com/embed/${this.currentYoutubeId}?autoplay=1`;
     }
@@ -115,7 +116,7 @@ export default {
     async search () {
       console.log(this.songName);
       this.loading.isLoading = true;
-      const youtubeList = await searchYoutube('AIzaSyB73lB6nwGd55DT4LjTikhkIfMluml7fKc', this.songName);
+      const youtubeList = await searchYoutube(this.config.youtubeApiKey, this.songName);
       this.loading.isLoading = false;
       console.log(youtubeList);
       this.pageInfo = youtubeList.pageInfo;
@@ -156,7 +157,6 @@ export default {
       this.bugsDurationStr = bugsDurationStr;
       this.songName = `${this.musicDetail.musicDetail.artist[0]}-${this.musicDetail.musicDetail.songName}`;
     }
-    this.search();
   }
 };
 </script>
@@ -181,9 +181,12 @@ export default {
     opacity: 0;
     position: absolute;
     top: 50%;
-    left: 35%;
+    left: 50%;
     transform: translate(-50%, -50%);
     width: 100%;
     cursor: pointer;
+  }
+  .columnText {
+    font-size: 12px !important;
   }
 </style>

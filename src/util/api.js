@@ -173,7 +173,13 @@ export const getBugsTop100 = () => {
 
 export const searchYoutube = async (apiKey, query) => {
   console.log(query);
-  const idSearchResult = await axios.get(`https://www.googleapis.com/youtube/v3/search?key=${apiKey}&q=${query}&maxResults=50`);
+  let idSearchResult;
+  try {
+    idSearchResult = await axios.get(`https://www.googleapis.com/youtube/v3/search?key=${apiKey}&q=${query}&maxResults=50`).catch(e => e);
+  } catch (e) {
+    console.log(e);
+  }
+  console.log(idSearchResult);
   console.log(idSearchResult.data);
   const youtubeIdList = idSearchResult.data.items.map(item => item.id.videoId);
   if (!youtubeIdList.length) {

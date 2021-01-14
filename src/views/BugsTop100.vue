@@ -16,7 +16,7 @@ import { ipcRenderer } from "electron"
             <td class="table-item">{{item.artistName}}</td>
             <td class="table-item">{{item.albumName}}</td>
             <td>
-              <v-btn icon @click="openYoutubeWindow(item.key)" medium color="primary">
+              <v-btn icon @click="openYoutubeWindow(item.key)" medium color="red">
                 <v-icon large>{{icons.mdiYoutube}}</v-icon>
               </v-btn>
             </td>
@@ -43,7 +43,7 @@ export default {
         { text: 'song', value: 'songName', sortable: false },
         { text: 'artist', value: 'artistName', sortable: false },
         { text: 'album', value: 'albumName', sortable: false },
-        { text: '', value: '', sortable: false }
+        { text: 'youtube', value: '', sortable: false }
       ],
       tableOptions: {
         itemsPerPage: 100

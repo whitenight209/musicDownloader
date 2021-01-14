@@ -78,7 +78,11 @@ ipcMain.on(Event.EVENT_INSERT_MUSIC, (event, data) => {
 ipcMain.on(Event.EVENT_SELECT_MUSIC, async (e, { page = 0, offset = 30 }) => {
   logger.debug('EVENT_SELECT_MUSIC');
   const totalCount = await database.selectMusicTotalCount(db);
-  const musicList = await database.selectMusic(db, { page, offset });
+  let musicList = await database.selectMusic(db, { page, offset });
+  musicList = musicList.map(music => {
+    music.percentage = 0;
+    return music;
+  });
   win.send(Event.EVENT_SELECT_MUSIC, { musicList, totalCount: totalCount[0].count });
 });
 ipcMain.on(Event.DELETE_STORED_MUSIC, (e, musicId) => {
@@ -101,10 +105,11 @@ ipcMain.on(Event.OPEN_FILE_DIALOG, e => {
 });
 
 ipcMain.on(Event.DOWNLOAD_MUSIC, async (e, { id, downloadPath }) => {
-  const youtubeProcessSender = (musicId, progress) => {
-    console.log(`${musicId} ${progress} is sended`);
-    win.send(Event.EVENT_SEND_DOWNLOAD_SONG_PROGRESS, { musicId, progress });
+  const youtubeProcessSender = (musicId, percentage) => {
+    console.log(`${musicId} ${percentage} is sended`);
+    win.send(Event.EVENT_SEND_DOWNLOAD_SONG_PROGRESS, { musicId, percentage });
   };
+  youtubeProcessSender(id, 0);
   logger.debug('EVENT_SELET_MUSIC');
   logger.debug(`music id ${id}`);
   let music = await database.selectMusicById(db, id);
@@ -114,11 +119,13 @@ ipcMain.on(Event.DOWNLOAD_MUSIC, async (e, { id, downloadPath }) => {
   const mp3FilePath = `${downloadPath}/${music.youtubeId}.mp3`;
   const newMp3FilePath = `${downloadPath}/${music.artistName.replace(' ', '_')}_${music.name.replace(' ', '_')}.mp3`;
   const result = await downloadYoutube(youtubeProcessSender, id, libPath, music.youtubeId, music.duration, downloadPath, music.youtubeId);
-  console.log(music.albumCoverImage);
   const imageData = Buffer.from(await getImage(music.albumCoverImage), 'binary');
+  youtubeProcessSender(id, 70);
   writeMetaData(mp3FilePath, music.name, music.artistName, music.albumName, imageData, music.lyrics);
+  youtubeProcessSender(id, 85);
   logger.debug(`download music ${music.name} result ${result}`);
   fs.renameSync(mp3FilePath, newMp3FilePath);
+  youtubeProcessSender(id, 100);
 });
 ipcMain.on(Event.INIT_CONFIG, () => {
   win.send(Event.INIT_CONFIG, config);
@@ -135,7 +142,7 @@ const backupMusicDatabase = async (db, backupPath) => {
     if (err) throw err;
     console.log('The file has been saved!');
   });
-}
+};
 
 const createYoutubeWindow = async (musicId) => {
   if (!youtubeWindow) {
