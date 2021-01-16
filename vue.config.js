@@ -10,14 +10,22 @@ module.exports = {
   pluginOptions: {
     electronBuilder: {
       builderOptions: {
+        // extraResources: [
+        //   "db/music.db",
+        //   'lib/youtube-dl',
+        //   'conf/'
+        // ],
         extraResources: [
-          'db/music.db',
-          'lib/ffmpeg',
-          'lib/youtube-dl',
+          {
+            "from": "lib/${os}/*",
+            "to": "lib"
+          },
+          "db/music.db",
           'conf/'
         ]
       },
-      externals: ['knex', 'sqlite3']
+      externals: ['knex', 'sqlite3'],
+
     }
   }
 };
