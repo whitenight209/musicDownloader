@@ -99,10 +99,9 @@ export default new Vuex.Store({
       const musicList = await getBugsTop100();
       commit('setTop100List', musicList);
     },
-    async searchBugsMusic ({ state, commit }, { value, option, page = 1 }) {
-      const musicList = await searchBugsSong(value, option, page);
+    async searchBugsMusic ({ state, commit }, { songName, searchType, page = 1 }) {
+      const musicList = await searchBugsSong(songName, searchType, page);
       commit('setBugsSearchResult', musicList);
-      throw new Error('this is error');
     },
     async getMusicDetail ({ commit }, musicId) {
       const musicDetail = await getMusicDetail(musicId);

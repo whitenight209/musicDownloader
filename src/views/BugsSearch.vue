@@ -6,7 +6,7 @@
             v-on:keyup.enter="bugsSearch"
             class="bugs-input mr-3 d-inline-flex"
             height="30"
-            v-model="songName"
+            v-model="bugsSearchValue"
             label="노래 이름"
             required
           ></v-text-field>
@@ -14,7 +14,7 @@
             <v-select
               label="검색 타입"
               class="search-type"
-              v-model="selectedSearchType"
+              v-model="bugSearchType"
               :items="searchType"
               item-text="text"
               item-value="value"
@@ -27,7 +27,7 @@
       </v-row>
       <v-data-table
         :headers="headers"
-        :items="items.songList"
+        :items="getSearchedBugsItems.songList"
         :loading="isLoading"
         :items-per-page=50
         hide-default-footer
@@ -35,7 +35,7 @@
         <template v-slot:body="{ items }">
           <tbody>
           <tr v-for="item in items" :key="item.key">
-            <td height="50px"><img class="table-image" width="50px" :src="item.albumCoverUrl"/></td>
+            <td height="50px"><img alt="" class="table-image" width="50px" :src="item.albumCoverUrl"/></td>
             <td class="table-text">{{item.songName}}</td>
             <td class="table-text">{{item.artistName}}</td>
             <td class="table-text">{{item.albumName}}</td>
@@ -48,12 +48,17 @@
           </tbody>
         </template>
       </v-data-table>
+    <div>
+      <v-btn v-for="(item, index) in getPagination.pages" :key="index" color="white" small class="pa-0 mr-2" width="25" @click="bugsSearch(item.index)">
+        {{item.index}}
+      </v-btn>
+    </div>
   </div>
 </template>
 
 <script>
-import { searchBugsSong } from '@/util/api';
 import { mdiYoutube, mdiDatabaseSearch } from '@mdi/js';
+import { mapGetters, mapActions } from 'vuex';
 
 export default {
   name: 'BugsSearch',
@@ -89,22 +94,48 @@ export default {
       isLoading: false
     };
   },
+  computed: {
+    ...mapGetters({
+      getBugsSearchParameter: 'getBugsSearchParameter',
+      getPagination: 'getPagination',
+      getSearchedBugsItems: 'getSearchedBugsItems'
+    }),
+    bugsSearchValue: {
+      get () {
+        return this.getBugsSearchParameter.searchValue;
+      },
+      set (value) {
+        this.setBugsSearchValue(value);
+      }
+    },
+    bugSearchType: {
+      get () {
+        return this.getBugsSearchParameter.searchType;
+      },
+      set (searchType) {
+        this.setBugsSearchType(searchType);
+      }
+    }
+  },
   methods: {
-    async bugsSearch () {
+    ...mapActions({
+      setBugsSearchValue: 'setBugsSearchValue',
+      setBugsSearchType: 'setBugsSearchType',
+      searchBugsMusic: 'searchBugsMusic'
+    }),
+    async bugsSearch (page = 1) {
       this.isLoading = true;
-      const items = await searchBugsSong(this.songName, this.selectedSearchType);
-      this.items = items;
-      const selectedPage = items.pageList.filter(page => page.isSelected)[0];
-      const startIndex = items.pageList[0];
-      const pageOffset = items.pageList.length;
-      this.pagination = { selectedPage, startIndex, pageOffset };
+      await this.searchBugsMusic({
+        songName: this.bugsSearchValue,
+        searchType: this.selectedSearchType,
+        page
+      });
+      console.log(this.getSearchedBugsItems);
       this.isLoading = false;
     },
     async openYoutubeWindow (musicId) {
       console.log(musicId);
       await this.$router.push({ name: 'youtubeSearch', query: { bugsId: musicId } });
-      // console.log(this.musicDetail);
-      // ipcRenderer.send(Events.EVENT_OPEN_YOUTUBE_WINDOW, musicId);
     }
   }
 };
