@@ -38,7 +38,7 @@
       <v-row>
         <v-data-table
           :headers="headers"
-          :items="items"
+          :items="getYoutubeSearch.items"
           :loading="loading.isLoading"
           :loading-text="loading.loadingText"
         >
@@ -70,7 +70,6 @@
 <script>
 import { mapGetters, mapActions } from 'vuex';
 import { mdiYoutube, mdiCloseBoxMultiple, mdiDownloadBox } from '@mdi/js';
-import { searchYoutube } from '@/util/api';
 import Event from '@/Event';
 import { bugsDurationConverter } from '@/util/util';
 import Logger from '@/Logger';
@@ -106,23 +105,21 @@ export default {
     };
   },
   computed: {
-    ...mapGetters({ musicDetail: 'getMusicDetail', config: 'getConfig' }),
+    ...mapGetters({ musicDetail: 'getMusicDetail', config: 'getConfig', getYoutubeSearch: 'getYoutubeSearch' }),
     youtubeUrl () {
       return `https://www.youtube.com/embed/${this.currentYoutubeId}?autoplay=1`;
     }
   },
   methods: {
-    ...mapActions({ getMusicDetail: 'getMusicDetail' }),
+    ...mapActions({
+      getMusicDetail: 'getMusicDetail',
+      actionYoutubeSearch: 'actionYoutubeSearch'
+    }),
     async search () {
       console.log(this.songName);
       this.loading.isLoading = true;
-      const youtubeList = await searchYoutube(this.config.youtubeApiKey, this.songName);
+      await this.actionYoutubeSearch({ keyword: this.songName });
       this.loading.isLoading = false;
-      console.log(youtubeList);
-      this.pageInfo = youtubeList.pageInfo;
-      this.items = youtubeList.items;
-      this.prevPageToken = youtubeList.prevPageToken;
-      this.nextPageToken = youtubeList.nextPageToken;
     },
     youtubeItemClick (youtubeId) {
       console.log(youtubeId);

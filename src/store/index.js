@@ -1,6 +1,6 @@
 import Vue from 'vue';
 import Vuex from 'vuex';
-import { getBugsTop100, getMusicDetail, searchBugsSong } from '@/util/api';
+import { getBugsTop100, getMusicDetail, searchBugsSong, searchYoutube } from '@/util/api';
 Vue.use(Vuex);
 
 export default new Vuex.Store({
@@ -29,6 +29,9 @@ export default new Vuex.Store({
           pageOffset: 10
         }
       }
+    },
+    youtubeSearch: {
+
     },
     processList: [],
     storedMusicList: []
@@ -92,6 +95,9 @@ export default new Vuex.Store({
     },
     setStoredMusicList (state, data) {
       state.storedMusicList = data.musicList;
+    },
+    setYoutubeSearch (state, data) {
+      state.youtubeSearch = data;
     }
   },
   actions: {
@@ -149,6 +155,10 @@ export default new Vuex.Store({
     },
     setStoredMusicList ({ commit }, data) {
       commit('setStoredMusicList', data);
+    },
+    async actionYoutubeSearch ({ commit, state }, { keyword }) {
+      const youtubeSearchResult = await searchYoutube(state.config.youtubeApiKey, keyword);
+      commit('setYoutubeSearch', youtubeSearchResult);
     }
   },
   modules: {
@@ -192,6 +202,9 @@ export default new Vuex.Store({
     },
     getStoredMusicList (state) {
       return state.storedMusicList;
+    },
+    getYoutubeSearch (state) {
+      return state.youtubeSearch;
     }
   }
 });
