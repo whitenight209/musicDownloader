@@ -30,7 +30,7 @@ const registerYoutubeApiKey = () => {
 };
 
 const getResourcePath = (dir) => {
-  const pathToDbFile = isBuild ? path.join(__dirname, `../${dir}`) : path.join(__dirname, 'bundled', dir);
+  const pathToDbFile = isBuild ? path.join(__dirname, `../${dir}`) : path.join(__dirname, dir);
   return pathToDbFile;
 };
 

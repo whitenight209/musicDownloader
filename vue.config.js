@@ -17,7 +17,7 @@ module.exports = {
         // ],
         extraResources: [
           {
-            "from": "lib/${os}/*",
+            "from": "lib/${os}/",
             "to": "lib"
           },
           "db/music.db",
