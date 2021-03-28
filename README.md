@@ -1,9 +1,12 @@
 # Music Downloader
 
 ## download music easily
-```
-yarn install
-```
+this is music downloader as based on youtube-dl(https://github.com/ytdl-org/youtube-dl) and ffmpeg(https://github.com/FFmpeg/FFmpeg)  
+
+### features  
+- automatically add album cover, lyrics and other id3v2 tags (artist, song type, etc)  
+- store selected musics in sql lite database
+
 ## how to build
 ```
 1. first yarn install
