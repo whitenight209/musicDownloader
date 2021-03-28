@@ -7,6 +7,16 @@ this is music downloader as based on youtube-dl(https://github.com/ytdl-org/yout
 - automatically add album cover, lyrics and other id3v2 tags (artist, song type, etc)  
 - store selected musics in sql lite database
 
+## how to use?
+
+1. choose music in top 100 or bugs search tab
+2. in youtube search page select youtube video about selected music item
+3. then at stored youtube page select download path and click download button
+4. check your download directory then you will see the music file.
+
+![Alt Text](./static/review.gif)  
+
+
 ## how to build
 ```
 1. first yarn install
@@ -34,12 +44,3 @@ this is music downloader as based on youtube-dl(https://github.com/ytdl-org/yout
 
 3. yarn run electron:serve
 ```
-
-## how to use?
-
-1. choose music in top 100 or bugs search tab
-2. in youtube search page select youtube video about selected music item
-3. then at stored youtube page select download path and click download button
-4. check your download directory then you will see the music file.
-
-![Alt Text](./static/review.gif)
