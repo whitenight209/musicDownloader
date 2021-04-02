@@ -121,7 +121,7 @@ ipcMain.on(Event.DOWNLOAD_MUSIC, async (e, { id, downloadPath }) => {
   const result = await downloadYoutube(youtubeProcessSender, id, libPath, music.youtubeId, music.duration, downloadPath, music.youtubeId);
   const imageData = Buffer.from(await getImage(music.albumCoverImage), 'binary');
   youtubeProcessSender(id, 70);
-  writeMetaData(mp3FilePath, music.name, music.artistName, music.albumName, imageData, music.lyrics);
+  writeMetaData(mp3FilePath, music.name, music.artistName, music.albumName, imageData, music.lyrics,music.bugsId, music.youtubeId);
   youtubeProcessSender(id, 85);
   logger.debug(`download music ${music.name} result ${result}`);
   fs.renameSync(mp3FilePath, newMp3FilePath);
