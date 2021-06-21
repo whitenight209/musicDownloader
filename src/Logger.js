@@ -18,15 +18,38 @@ export default class Logger {
     return Logger.instance;
   }
 
-  write (message) {
-    fs.appendFileSync(this.writer, message, 'utf8');
+  debug (message) {
+    const level = 'debug';
+    this.write(level, message);
   }
 
-  debug (message) {
+  info (message) {
+    const level = 'info';
+    this.write(level, message);
+  }
+
+  log (message) {
+    const level = 'log';
+    this.write(level, message);
+  }
+
+  writeToFile (level, message) {
+    fs.appendFile(this.writer, this.generateMessage(level, message), {}, () => {});
+  }
+
+  writeToConsole (level, message) {
+    console.log(this.generateMessage(level, message));
+  }
+
+  write (level, message) {
     if (this.isProduction) {
-      this.write(message);
+      this.writeToFile(level, message);
     } else {
-      console.log(message);
+      this.writeToConsole(level, message);
     }
+  }
+
+  generateMessage (level, message) {
+    return `[${level}] ${message}`;
   }
 }

@@ -65,7 +65,7 @@
 </template>
 
 <script>
-import { mdiYoutube, mdiFolderMusic, mdiPoll } from '@mdi/js';
+import { mdiYoutube, mdiFolderMusic, mdiPoll, mdiCog } from '@mdi/js';
 import BugsIcon from '@/components/BugsIcon';
 import Event from '@/Event';
 import { mapGetters, mapActions } from 'vuex';
@@ -132,7 +132,8 @@ export default {
         },
         { title: 'Bugs 검색', type: 'component', component: BugsIcon, link: '/bugs/search' },
         { title: 'Youtube 검색', color: 'red', icon: mdiYoutube, link: '/youtube/search' },
-        { title: '저장된 노래', color: 'purple', icon: mdiFolderMusic, link: '/stored' }
+        { title: '저장된 노래', color: 'purple', icon: mdiFolderMusic, link: '/stored' },
+        { title: '설정', icon: mdiCog, link: '/settings' }
       ]
     };
   }

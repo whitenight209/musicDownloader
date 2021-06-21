@@ -9,10 +9,10 @@ import { downloadYoutube } from '@/util/youtube';
 import { getImage } from '@/util/api';
 import { writeMetaData } from '@/util/musicUtils';
 import fs from 'fs';
+import Util from '@/Util';
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib';
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer';
 import path from 'path';
-
 const isDevelopment = process.env.NODE_ENV !== 'production';
 const isBuild = process.env.NODE_ENV === 'production';
 app.commandLine.appendSwitch('disable-web-security');
@@ -52,7 +52,9 @@ const db = knex({
 protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: { secure: true, standard: true } }]);
 
 ipcMain.on(Event.EVENT_OPEN_YOUTUBE_WINDOW, (event, musicDetail) => {
-  createYoutubeWindow(musicDetail);
+  createYoutubeWindow(musicDetail).then(() => {
+    logger.log('create Youtube Window complete!');
+  });
 });
 ipcMain.on(Event.EVENT_INSERT_MUSIC, (event, data) => {
   const musicDetail = data.musicDetail;
@@ -106,27 +108,62 @@ ipcMain.on(Event.OPEN_FILE_DIALOG, e => {
 
 ipcMain.on(Event.DOWNLOAD_MUSIC, async (e, { id, downloadPath }) => {
   const youtubeProcessSender = (musicId, percentage) => {
-    console.log(`${musicId} ${percentage} is sended`);
+    logger.debug(`${musicId} ${percentage} is sended`);
     win.send(Event.EVENT_SEND_DOWNLOAD_SONG_PROGRESS, { musicId, percentage });
   };
   youtubeProcessSender(id, 0);
-  logger.debug('EVENT_SELET_MUSIC');
+  logger.debug('EVENT_SELECT_MUSIC');
   logger.debug(`music id ${id}`);
-  let music = await database.selectMusicById(db, id);
-  music = music[0];
+  const musicSaveSetting = await database.getSettingById(db, 1);
+  logger.debug(musicSaveSetting);
+  if (musicSaveSetting.value === 'true') {
+    logger.debug('music exists!');
+    const cachedMusicExists = await database.checkAlreadyDownloadedMusic(db, id);
+    logger.debug(`cachedMusicExists ${cachedMusicExists}`);
+    if (cachedMusicExists) {
+      logger.debug('cached music exists!');
+      const musicData = await database.selectCachedMusicDataById(db, id);
+      const music = await database.selectMusicById(db, id);
+      logger.debug(music);
+      fs.writeFile(`${downloadPath}/${Util.generateMp3FileName(music.artistName, music.name)}`, musicData, () => {
+        logger.debug('file write done!');
+      });
+      return;
+    }
+  }
+  const music = await database.selectMusicById(db, id);
   logger.debug(music);
   const libPath = getResourcePath('lib');
   const mp3FilePath = `${downloadPath}/${music.youtubeId}.mp3`;
-  const newMp3FilePath = `${downloadPath}/${music.artistName.replace(' ', '_')}_${music.name.replace(' ', '_')}.mp3`;
+  const newMp3FilePath = `${downloadPath}/${Util.generateMp3FileName(music.artistName, music.name)}`;
   const result = await downloadYoutube(youtubeProcessSender, id, libPath, music.youtubeId, music.duration, downloadPath, music.youtubeId);
   const imageData = Buffer.from(await getImage(music.albumCoverImage), 'binary');
   youtubeProcessSender(id, 70);
-  writeMetaData(mp3FilePath, music.name, music.artistName, music.albumName, imageData, music.lyrics,music.bugsId, music.youtubeId);
+  writeMetaData(mp3FilePath, music.name, music.artistName, music.albumName, imageData, music.lyrics, music.bugsId, music.youtubeId);
   youtubeProcessSender(id, 85);
   logger.debug(`download music ${music.name} result ${result}`);
+  logger.debug(musicSaveSetting);
+  if (musicSaveSetting.value === 'true') {
+    logger.debug(mp3FilePath);
+    await saveMusicFileIntoDatabase(mp3FilePath, id);
+  }
   fs.renameSync(mp3FilePath, newMp3FilePath);
   youtubeProcessSender(id, 100);
 });
+
+const saveMusicFileIntoDatabase = async (mp3FilePath, musicId) => {
+  const mp3Data = await fs.readFileSync(mp3FilePath, {});
+  logger.debug(`before compression ${mp3Data.length}`);
+  const musicExists = await database.checkAlreadyDownloadedMusic(db, musicId);
+  if (!musicExists) {
+    const insertResult = await database.insertDownloadMusicData(db, musicId, mp3Data);
+    logger.debug(insertResult);
+  } else {
+    const updateResult = await database.updateMusicData(db, musicId, mp3Data);
+    logger.debug(updateResult);
+  }
+};
+
 ipcMain.on(Event.INIT_CONFIG, () => {
   win.send(Event.INIT_CONFIG, config);
 });
@@ -134,13 +171,28 @@ ipcMain.on(Event.INIT_CONFIG, () => {
 ipcMain.on(Event.EVENT_MUSIC_BACKUP_REQUEST, async (backupPath) => {
   await backupMusicDatabase(db, backupPath);
 });
-
+ipcMain.on(Event.EVENT_FETCH_SETTINGS, async () => {
+  try {
+    const settings = await database.selectSettings(db);
+    logger.debug('fetch settings');
+    win.send(Event.EVENT_FETCH_SETTINGS, settings);
+  } catch (e) {
+    logger.debug(e, '');
+  }
+});
+ipcMain.on(Event.EVENT_UPDATE_SETTING, async (e, setting) => {
+  try {
+    await database.updateSetting(db, setting);
+  } catch (e) {
+    logger.debug(e, '');
+  }
+});
 const backupMusicDatabase = async (db, backupPath) => {
   const fileName = 'backup.json';
   const musicList = await database.selectAllMusic(db);
   fs.writeFile(path.join(backupPath, fileName), musicList, (err) => {
     if (err) throw err;
-    console.log('The file has been saved!');
+    logger.debug('The file has been saved!');
   });
 };
 
@@ -165,7 +217,7 @@ const createYoutubeWindow = async (musicId) => {
   } else {
     createProtocol('app');
     // Load the index.html when not in development
-    await youtubeWindow.loadURL('app://./index.html#youtube?appBar=false&menu=false').then(() => console.log('load success')).catch(err => console.log(err));
+    await youtubeWindow.loadURL('app://./index.html#youtube?appBar=false&menu=false').then(() => logger.debug('load success')).catch(err => logger.debug(err));
   }
   youtubeWindow.on('closed', () => {
     logger.debug('youtube window closed');
@@ -179,7 +231,7 @@ const createYoutubeWindow = async (musicId) => {
 const createWindow = async () => {
   // Create the browser window.
   /* global __static */
-  console.log('create main window');
+  logger.debug('create main window');
   win = new BrowserWindow({
     width: 1280,
     height: 800,

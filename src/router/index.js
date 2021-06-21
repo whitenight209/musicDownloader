@@ -5,7 +5,7 @@ import YoutubePlayer from '@/views/YoutubePlayer';
 import StoredMusic from '@/views/StoredMusic';
 import YoutubeSearch from '@/views/YoutubeSearch';
 import BugsSearch from '@/views/BugsSearch';
-import Setting from '@/views/Setting';
+import Setting from '@/views/Settings';
 import DownloadMonitor from '@/views/DownloadMonitor';
 
 Vue.use(VueRouter);

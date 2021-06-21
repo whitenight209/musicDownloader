@@ -52,7 +52,7 @@ const makeCommand = (libPath, youtubeId, duration, downloadPath, fileName) => {
   args.push('--ffmpeg-location');
   args.push(libPath);
   args.push('-o');
-  args.push(`${downloadPath}/${youtubeId}.%(ext)s`)
+  args.push(`${downloadPath}/${youtubeId}.%(ext)s`);
   args.push(`${YOUTUBE_URL}${youtubeId}`);
   args.push('--postprocessor-args');
   args.push(` -t ${duration}`);

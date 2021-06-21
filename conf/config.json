@@ -1,3 +1,4 @@
 {
-  "youtubeApiKey": ""
+  "youtubeApiKey": "",
+  "logLevel": "debug"
 }

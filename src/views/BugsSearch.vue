@@ -86,7 +86,7 @@ export default {
         databaseSearch: mdiDatabaseSearch
       },
       searchType: [
-        { text: '전체', value: 'ARTIST_TRACK_ALBUM' },
+        { text: '곡명', value: 'TRACK_ONLY' },
         { text: '앨범', value: 'ALBUM_ONLY' },
         { text: '가수', value: 'ARTIST_ONLY' }
       ],
