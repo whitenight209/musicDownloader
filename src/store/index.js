@@ -1,9 +1,10 @@
 import Vue from 'vue';
 import Vuex from 'vuex';
+import { inject, provide } from '@vue/composition-api';
 import { getBugsTop100, getMusicDetail, searchBugsSong, searchYoutube } from '@/util/api';
 Vue.use(Vuex);
 
-export default new Vuex.Store({
+const store = new Vuex.Store({
   state: {
     notifications: [],
     top100List: [],
@@ -208,3 +209,21 @@ export default new Vuex.Store({
     }
   }
 });
+
+const storeSymbol = Symbol('store');
+
+// 저장소 제공 헬퍼 함수
+export const provideStore = () => {
+  provide(storeSymbol, store);
+};
+
+// 저장소 주입 헬퍼 함수
+export const useStore = () => {
+  const store = inject(storeSymbol);
+  if (!store) {
+    throw new Error('No store provided');
+  }
+  return store;
+};
+
+export default store;

@@ -48,10 +48,13 @@ export const updateMusicData = (db, musicId, musicData) => {
 };
 
 export const getSettingById = async (db, settingId) => {
-  const result = await db.select('setting_id', 'setting_id', 'name', 'description', 'value', 'value_type').from('settings').where({ setting_id: settingId });
+  const result = await db.select('setting_id', 'name', 'description', 'value', 'value_type').from('settings').where({ setting_id: settingId });
   return result[0];
 };
-
+export const upsertDownloadPath = async (db, downloadPath) => {
+  
+    //insert
+};
 export default {
   insertMusic,
   selectMusic,

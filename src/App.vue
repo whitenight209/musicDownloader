@@ -69,13 +69,18 @@ import { mdiYoutube, mdiFolderMusic, mdiPoll, mdiCog } from '@mdi/js';
 import BugsIcon from '@/components/BugsIcon';
 import Event from '@/Event';
 import { mapGetters, mapActions } from 'vuex';
-
+import { provideStore } from '@/store/index';
+import { provideRouter } from '@/router/index';
 const { ipcRenderer } = window.require('electron');
 export default {
   components: {
     BugsIcon
   },
   name: 'App',
+  setup () {
+    provideStore();
+    provideRouter();
+  },
   created () {
     ipcRenderer.on(Event.OPEN_FILE_DIALOG, (e, downloadPath) => {
       this.setDownloadPath(downloadPath);

@@ -68,6 +68,7 @@
 </template>
 
 <script>
+import { defineComponent } from '@vue/composition-api';
 import { mapGetters, mapActions } from 'vuex';
 import { mdiYoutube, mdiCloseBoxMultiple, mdiDownloadBox } from '@mdi/js';
 import Event from '@/Event';
@@ -75,8 +76,11 @@ import { bugsDurationConverter } from '@/util/util';
 import Logger from '@/Logger';
 const { ipcRenderer } = window.require('electron');
 
-export default {
+export default defineComponent({
   name: 'YoutubeSearch',
+  setup (props) {
+    console.log(props);
+  },
   data () {
     return {
       headers: [
@@ -155,7 +159,7 @@ export default {
       this.songName = `${this.musicDetail.musicDetail.artist[0]}-${this.musicDetail.musicDetail.songName}`;
     }
   }
-};
+});
 </script>
 
 <style scoped>

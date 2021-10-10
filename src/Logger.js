@@ -11,7 +11,7 @@ export default class Logger {
         // if (!isExists) {
         //   fs.utimesSync(this.fileLocation, time, time);
         // }
-        this.writer = fs.openSync(this.fileLocation, 'w');
+        this.riter = fs.openSync(this.fileLocation, 'w');
       }
       Logger.instance = this;
     }
@@ -50,6 +50,9 @@ export default class Logger {
   }
 
   generateMessage (level, message) {
+    if (typeof message === 'object') {
+      return `[${level}] ${JSON.stringify(message)}`;
+    }
     return `[${level}] ${message}`;
   }
 }

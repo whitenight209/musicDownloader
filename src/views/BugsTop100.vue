@@ -15,7 +15,7 @@
             <td class="table-item">{{item.artistName}}</td>
             <td class="table-item">{{item.albumName}}</td>
             <td>
-              <v-btn icon @click="openYoutubeWindow(item.key)" medium color="red">
+              <v-btn icon @click="routeToYoutubeWindow(item.key)" medium color="red">
                 <v-icon large>{{icons.mdiYoutube}}</v-icon>
               </v-btn>
             </td>
@@ -27,51 +27,43 @@
 </template>
 
 <script>
-import { mapGetters, mapActions } from 'vuex';
 import { mdiYoutube } from '@mdi/js';
-// import Events from '../Event';
-// const { ipcRenderer } = window.require('electron');
-export default {
-
+import { ref, onMounted, computed, defineComponent } from '@vue/composition-api';
+import { useStore } from '@/store/index';
+import { useRouter } from '@/router/index';
+export default defineComponent({
   name: 'Home',
-  data () {
+  setup () {
+    const { state, dispatch } = useStore();
+    const router = useRouter();
+    const headers = ref([
+      { text: 'ranking', value: 'ranking', align: 'center', sortable: false },
+      { text: '', value: 'albumCoverUrl', sortable: false },
+      { text: 'song', value: 'songName', sortable: false },
+      { text: 'artist', value: 'artistName', sortable: false },
+      { text: 'album', value: 'albumName', sortable: false },
+      { text: 'youtube', value: '', sortable: false }
+    ]);
+    const routeToYoutubeWindow = async (musicId) => {
+      await router.push({ name: 'youtubeSearch', query: { bugsId: musicId } });
+    };
+    const top100List = computed(() => state.top100List);
+    onMounted(e => {
+      dispatch('getTop100MusicList');
+    });
     return {
-      headers: [
-        { text: 'ranking', value: 'ranking', align: 'center', sortable: false },
-        { text: '', value: 'albumCoverUrl', sortable: false },
-        { text: 'song', value: 'songName', sortable: false },
-        { text: 'artist', value: 'artistName', sortable: false },
-        { text: 'album', value: 'albumName', sortable: false },
-        { text: 'youtube', value: '', sortable: false }
-      ],
+      headers,
+      top100List,
+      icons: {
+        mdiYoutube
+      },
       tableOptions: {
         itemsPerPage: 100
       },
-      icons: {
-        mdiYoutube
-      }
+      routeToYoutubeWindow
     };
-  },
-  components: {
-    // HelloWorld
-  },
-  mounted () {
-    this.getTop100MusicList();
-    console.log(this.top100List);
-  },
-  methods: {
-    ...mapActions({ getTop100MusicList: 'getTop100MusicList', getMusicDetail: 'getMusicDetail' }),
-    async openYoutubeWindow (musicId) {
-      console.log(musicId);
-      await this.$router.push({ name: 'youtubeSearch', query: { bugsId: musicId } });
-      // console.log(this.musicDetail);
-      // ipcRenderer.send(Events.EVENT_OPEN_YOUTUBE_WINDOW, musicId);
-    }
-  },
-  computed: {
-    ...mapGetters({ top100List: 'getTop100', musicDetail: 'getMusicDetail' })
   }
-};
+});
 </script>
 <style scoped>
   .table-item {

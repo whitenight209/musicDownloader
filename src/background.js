@@ -151,6 +151,10 @@ ipcMain.on(Event.DOWNLOAD_MUSIC, async (e, { id, downloadPath }) => {
   youtubeProcessSender(id, 100);
 });
 
+ipcMain.on(Event.EVENT_EXPORT_MUSIC, async (e, location) => {
+  console.log(location);
+});
+
 const saveMusicFileIntoDatabase = async (mp3FilePath, musicId) => {
   const mp3Data = await fs.readFileSync(mp3FilePath, {});
   logger.debug(`before compression ${mp3Data.length}`);
@@ -162,6 +166,11 @@ const saveMusicFileIntoDatabase = async (mp3FilePath, musicId) => {
     const updateResult = await database.updateMusicData(db, musicId, mp3Data);
     logger.debug(updateResult);
   }
+};
+const exportMusicData = (db) => {
+  const musics = database.selectAllMusic(db);
+  const exportResultData = {};
+  console.log(musics);
 };
 
 ipcMain.on(Event.INIT_CONFIG, () => {
