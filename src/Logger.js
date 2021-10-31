@@ -11,7 +11,7 @@ export default class Logger {
         // if (!isExists) {
         //   fs.utimesSync(this.fileLocation, time, time);
         // }
-        this.riter = fs.openSync(this.fileLocation, 'w');
+        this.writer = fs.openSync(this.fileLocation, 'w');
       }
       Logger.instance = this;
     }
