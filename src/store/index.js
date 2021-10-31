@@ -18,7 +18,7 @@ const store = new Vuex.Store({
     appBar: [],
     bugsSearchItems: {
       searchParameters: {
-        searchType: 'ARTIST_TRACK_ALBUM',
+        searchType: 'TRACK_ONLY',
         searchValue: ''
       },
       items: {
@@ -32,9 +32,10 @@ const store = new Vuex.Store({
       }
     },
     youtubeSearch: {
-
+      items: []
     },
     processList: [],
+    storedMusicTotalCount: 0,
     storedMusicList: []
   },
   mutations: {
@@ -95,6 +96,7 @@ const store = new Vuex.Store({
       state.processList.push(...musicItems);
     },
     setStoredMusicList (state, data) {
+      state.storedMusicTotalCount = data.totalCount;
       state.storedMusicList = data.musicList;
     },
     setYoutubeSearch (state, data) {
@@ -205,7 +207,7 @@ const store = new Vuex.Store({
       return state.storedMusicList;
     },
     getYoutubeSearch (state) {
-      return state.youtubeSearch;
+      return state.youtubeSearch.items;
     }
   }
 });

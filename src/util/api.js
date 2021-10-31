@@ -95,7 +95,7 @@ export const getMusicDetail = (musicId) => {
               });
             });
           }
-          const songName = stripString($('#container > header > div > h1').first().text() || '');
+          const songName = stripString(($('#container > header > div > h1').first().text() || '').replace('\[19금\]\n', ''));
           musicDetail.songName = songName;
           const albumCoverUrl = $('div.basicInfo > div > ul > li > a > img').first();
           if (albumCoverUrl) {

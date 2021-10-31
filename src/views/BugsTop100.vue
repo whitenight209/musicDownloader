@@ -36,13 +36,14 @@ export default defineComponent({
   setup () {
     const { state, dispatch } = useStore();
     const router = useRouter();
+    const itemsPerPage = ref(100);
     const headers = ref([
-      { text: 'ranking', value: 'ranking', align: 'center', sortable: false },
+      { text: '순위', value: 'ranking', align: 'center', sortable: false },
       { text: '', value: 'albumCoverUrl', sortable: false },
-      { text: 'song', value: 'songName', sortable: false },
-      { text: 'artist', value: 'artistName', sortable: false },
-      { text: 'album', value: 'albumName', sortable: false },
-      { text: 'youtube', value: '', sortable: false }
+      { text: '곡', value: 'songName', sortable: false },
+      { text: '아티스트', value: 'artistName', sortable: false },
+      { text: '앨범', value: 'albumName', sortable: false },
+      { text: 'YOUTUBE', value: '', sortable: false }
     ]);
     const routeToYoutubeWindow = async (musicId) => {
       await router.push({ name: 'youtubeSearch', query: { bugsId: musicId } });
@@ -58,7 +59,7 @@ export default defineComponent({
         mdiYoutube
       },
       tableOptions: {
-        itemsPerPage: 100
+        itemsPerPage: itemsPerPage.value
       },
       routeToYoutubeWindow
     };

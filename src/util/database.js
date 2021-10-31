@@ -1,8 +1,8 @@
 const insertMusic = (db, { bugsId, songName, youtubeId, artistName, albumName, albumCoverImage, albumId, duration, lyrics }) => {
   return db('music').insert({ bugsId, name: songName, youtubeId, artistName, albumName, albumCoverImage, albumId, duration, lyrics });
 };
-const selectMusic = (db, { page = 0, offset = 50 }) => {
-  const startIndex = page * offset;
+const selectMusic = (db, { page = 1, offset = 50 }) => {
+  const startIndex = (page - 1) * offset;
   const limit = startIndex + offset;
   console.log(`select music ${startIndex}, ${limit}`);
   return db.select('*').from('music').offset(startIndex).limit(limit);
@@ -52,7 +52,7 @@ export const getSettingById = async (db, settingId) => {
   return result[0];
 };
 export const upsertDownloadPath = async (db, downloadPath) => {
-  
+
     //insert
 };
 export default {

@@ -44,44 +44,37 @@
 </template>
 
 <script>
+import { ref, defineComponent, onMounted, onUnmounted } from '@vue/composition-api';
 import Event from '@/Event';
 const { ipcRenderer } = window.require('electron');
 
-export default {
+export default defineComponent({
   name: 'Settings',
-  components: {
-
-  },
-  data () {
-    return {
-      settings: []
+  setup () {
+    const settings = ref([]);
+    onMounted(() => {
+      ipcRenderer.on(Event.EVENT_FETCH_SETTINGS, renderSettings);
+      ipcRenderer.send(Event.EVENT_FETCH_SETTINGS);
+    });
+    onUnmounted(() => {
+      ipcRenderer.removeAllListeners(Event.EVENT_FETCH_SETTINGS);
+    });
+    const renderSettings = (e, newSettings) => {
+      console.log('setting received');
+      console.log(newSettings);
+      settings.value = newSettings;
     };
-  },
-  created () {
-    ipcRenderer.on(Event.EVENT_FETCH_SETTINGS, this.renderSettings);
-  },
-  mounted () {
-    console.log('mounted');
-    ipcRenderer.send(Event.EVENT_FETCH_SETTINGS);
-  },
-  beforeDestroy () {
-    ipcRenderer.removeAllListeners(Event.EVENT_FETCH_SETTINGS);
-  },
-  methods: {
-    renderSettings (e, data) {
-      this.settings = data;
-    },
-    onSettingChange (index, value) {
-      this.settings[index].value = value;
-      this.sendSettingData(this.settings[index]);
-      console.log(this.settings);
-    },
-    sendSettingData (setting) {
-      console.log(setting);
-      ipcRenderer.send(Event.EVENT_UPDATE_SETTING, setting);
-    }
+    const onSettingChange = (index, value) => {
+      settings.value[index].value = value;
+      ipcRenderer.send(Event.EVENT_UPDATE_SETTING, settings.value[index]);
+      console.log(settings.value);
+    };
+    return {
+      settings,
+      onSettingChange
+    };
   }
-};
+});
 </script>
 
 <style scoped>

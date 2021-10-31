@@ -15,7 +15,7 @@
         <v-col class="mr-0 pr-0">
           <iframe id="ytplayer" type="text/html" width="640" height="360"
                   :src=youtubeUrl
-                  frameborder="0"></iframe>
+          ></iframe>
         </v-col>
         <v-col class="ml-0 pl-0">
           <v-btn icon v-if="currentYoutubeId" @click="closeYoutubePlayer"><v-icon>{{icons.close}}</v-icon></v-btn>
@@ -36,9 +36,13 @@
         </v-col>
       </v-row>
       <v-row>
+        <template v-if="loading.isLoading">
+
+        </template>
         <v-data-table
+          v-else
           :headers="headers"
-          :items="getYoutubeSearch.items"
+          :items="youtubeVideos.items"
           :loading="loading.isLoading"
           :loading-text="loading.loadingText"
         >
@@ -68,96 +72,102 @@
 </template>
 
 <script>
-import { defineComponent } from '@vue/composition-api';
-import { mapGetters, mapActions } from 'vuex';
+import { computed, defineComponent, ref, onMounted, reactive } from '@vue/composition-api';
 import { mdiYoutube, mdiCloseBoxMultiple, mdiDownloadBox } from '@mdi/js';
 import Event from '@/Event';
 import { bugsDurationConverter } from '@/util/util';
+import { useStore } from '@/store/index';
+import { useRouter } from '@/router';
 import Logger from '@/Logger';
 const { ipcRenderer } = window.require('electron');
 
 export default defineComponent({
   name: 'YoutubeSearch',
-  setup (props) {
-    console.log(props);
-  },
-  data () {
-    return {
-      headers: [
-        { text: 'Thumbnail', value: 'snippet.title' },
-        { text: 'Name', value: 'fat' },
-        { text: 'Created', value: 'carbs' },
-        { text: 'Duration', value: 'protein' },
-        { text: 'Download', value: 'protein' }
-      ],
-      icons: {
-        youtube: mdiYoutube,
-        close: mdiCloseBoxMultiple,
-        download: mdiDownloadBox
-      },
-      loading: {
-        isLoading: false,
-        loadingText: 'loading youtube items'
-      },
-      songName: '',
-      items: [],
-      pageInfo: {},
-      nextPageToken: '',
-      prevPageToken: '',
-      currentYoutubeId: '',
-      bugsDurationStr: ''
-    };
-  },
-  computed: {
-    ...mapGetters({ musicDetail: 'getMusicDetail', config: 'getConfig', getYoutubeSearch: 'getYoutubeSearch' }),
-    youtubeUrl () {
-      return `https://www.youtube.com/embed/${this.currentYoutubeId}?autoplay=1`;
-    }
-  },
-  methods: {
-    ...mapActions({
-      getMusicDetail: 'getMusicDetail',
-      actionYoutubeSearch: 'actionYoutubeSearch'
-    }),
-    async search () {
-      console.log(this.songName);
-      this.loading.isLoading = true;
-      await this.actionYoutubeSearch({ keyword: this.songName });
-      this.loading.isLoading = false;
-    },
-    youtubeItemClick (youtubeId) {
-      console.log(youtubeId);
-      this.currentYoutubeId = youtubeId;
-    },
-    closeYoutubePlayer () {
-      this.currentYoutubeId = '';
-    },
-    saveMusic (youtubeId) {
-      const musicDetailData = this.musicDetail;
-      musicDetailData.musicDetail.youtubeId = youtubeId;
-      console.log(this.musicDetailData);
-      ipcRenderer.send(Event.EVENT_INSERT_MUSIC, musicDetailData);
-    }
-  },
-  created () {
-    ipcRenderer.on(Event.EVENT_INSERT_MUSIC, (e, result) => {
-      if (result === Event.SUCCESS) {
-        Logger.debug('save Success');
-      } else {
-        Logger.debug('save Failed');
-      }
+  setup () {
+    const { state, dispatch } = useStore();
+    const router = useRouter();
+    const headers = ref([
+      { text: 'Thumbnail', value: 'snippet.title' },
+      { text: 'Name', value: 'fat' },
+      { text: 'Created', value: 'carbs' },
+      { text: 'Duration', value: 'protein' },
+      { text: 'Download', value: 'protein' }
+    ]);
+    const icons = ref({
+      youtube: mdiYoutube,
+      close: mdiCloseBoxMultiple,
+      download: mdiDownloadBox
     });
-  },
-  async mounted () {
-    const queryParams = this.$route.query;
-    if (queryParams.bugsId) {
-      await this.getMusicDetail(queryParams.bugsId);
-    }
-    if (this.musicDetail.musicDetail) {
-      const bugsDurationStr = bugsDurationConverter(this.musicDetail.musicDetail.duration);
-      this.bugsDurationStr = bugsDurationStr;
-      this.songName = `${this.musicDetail.musicDetail.artist[0]}-${this.musicDetail.musicDetail.songName}`;
-    }
+    const loading = reactive({
+      isLoading: ref(false),
+      loadingText: ref('loading youtube items')
+    });
+    const songName = ref('');
+    let currentYoutubeId = ref('');
+    const items = ref([]);
+    const pageInfo = ref({});
+    const bugsDurationStr = ref('');
+    const youtubeUrl = computed(() => {
+      return `https://www.youtube.com/embed/${currentYoutubeId.value}?autoplay=1`;
+    });
+    const musicDetail = computed(() => state.musicDetail);
+    const youtubeVideos = computed(() => state.youtubeSearch);
+    const config = computed(() => state.config);
+    const search = async () => {
+      loading.isLoading = true;
+      await dispatch('actionYoutubeSearch', { keyword: songName.value });
+      loading.isLoading = false;
+    };
+    const closeYoutubePlayer = () => {
+      currentYoutubeId = '';
+    };
+    const youtubeItemClick = (youtubeId) => {
+      console.log(youtubeId);
+      currentYoutubeId.value = youtubeId;
+    };
+    const saveMusic = (youtubeId) => {
+      const musicDetailData = musicDetail;
+      musicDetailData.value.musicDetail.youtubeId = youtubeId;
+      ipcRenderer.send(Event.EVENT_INSERT_MUSIC, musicDetailData.value);
+    };
+    onMounted(async () => {
+      const queryParams = router.currentRoute.query;
+      if (queryParams.bugsId) {
+        await dispatch('getMusicDetail', queryParams.bugsId);
+      }
+      console.log(musicDetail);
+      if (musicDetail.value.musicDetail) {
+        const convertedDuration = bugsDurationConverter(musicDetail.value.musicDetail.duration);
+        bugsDurationStr.value = convertedDuration;
+        songName.value = `${musicDetail.value.musicDetail.artist[0]}-${musicDetail.value.musicDetail.songName}`;
+        console.log(songName);
+      }
+      ipcRenderer.on(Event.EVENT_INSERT_MUSIC, (e, result) => {
+        if (result === Event.SUCCESS) {
+          Logger.debug('save Success');
+        } else {
+          Logger.debug('save Failed');
+        }
+      });
+    });
+    return {
+      musicDetail,
+      config,
+      youtubeVideos,
+      headers,
+      loading,
+      icons,
+      songName,
+      items,
+      pageInfo,
+      currentYoutubeId,
+      bugsDurationStr,
+      youtubeUrl,
+      search,
+      closeYoutubePlayer,
+      youtubeItemClick,
+      saveMusic
+    };
   }
 });
 </script>

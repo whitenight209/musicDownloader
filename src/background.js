@@ -77,7 +77,7 @@ ipcMain.on(Event.EVENT_INSERT_MUSIC, (event, data) => {
   });
   logger.debug(data);
 });
-ipcMain.on(Event.EVENT_SELECT_MUSIC, async (e, { page = 0, offset = 30 }) => {
+ipcMain.on(Event.EVENT_SELECT_MUSIC, async (e, { page = 1, offset = 30 }) => {
   logger.debug('EVENT_SELECT_MUSIC');
   const totalCount = await database.selectMusicTotalCount(db);
   let musicList = await database.selectMusic(db, { page, offset });
@@ -184,6 +184,7 @@ ipcMain.on(Event.EVENT_FETCH_SETTINGS, async () => {
   try {
     const settings = await database.selectSettings(db);
     logger.debug('fetch settings');
+    logger.debug(settings);
     win.send(Event.EVENT_FETCH_SETTINGS, settings);
   } catch (e) {
     logger.debug(e, '');

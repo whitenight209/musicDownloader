@@ -21,34 +21,36 @@
             />
           </div>
           <v-btn icon class="ml-2 d-inline-block" height="30px" @click="bugsSearch">
-            <v-icon large>{{icons.databaseSearch}}</v-icon>
+            <v-icon large>{{icons.mdiDatabaseSearch}}</v-icon>
           </v-btn>
         </v-col>
       </v-row>
-      <v-data-table
-        :headers="headers"
-        :items="getSearchedBugsItems.songList"
-        :loading="isLoading"
-        :items-per-page=50
-        hide-default-footer
-      >
-        <template v-slot:body="{ items }">
-          <tbody>
-          <tr v-for="item in items" :key="item.key">
-            <td height="50px"><img alt="" class="table-image" width="50px" :src="item.albumCoverUrl"/></td>
-            <td class="table-text">{{item.songName}}</td>
-            <td class="table-text">{{item.artistName}}</td>
-            <td class="table-text">{{item.albumName}}</td>
-            <td>
-              <v-btn icon @click="openYoutubeWindow(item.key)" small color="primary">
-                <v-icon large>{{icons.mdiYoutube}}</v-icon>
-              </v-btn>
-            </td>
-          </tr>
-          </tbody>
-        </template>
-      </v-data-table>
-    <div>
+      <div style="margin-top: 30px">
+        <v-data-table
+          :headers="headers"
+          :items="getSearchedBugsItems.songList"
+          :loading="isLoading"
+          :items-per-page=50
+          hide-default-footer
+        >
+          <template v-slot:body="{ items }">
+            <tbody>
+            <tr v-for="item in items" :key="item.key">
+              <td height="50px"><img alt="" class="table-image" width="50px" :src="item.albumCoverUrl"/></td>
+              <td class="table-text">{{item.songName}}</td>
+              <td class="table-text">{{item.artistName}}</td>
+              <td class="table-text">{{item.albumName}}</td>
+              <td>
+                <v-btn icon @click="openYoutubeWindow(item.key)" small color="primary">
+                  <v-icon large>{{icons.mdiYoutube}}</v-icon>
+                </v-btn>
+              </td>
+            </tr>
+            </tbody>
+          </template>
+        </v-data-table>
+      </div>
+    <div class="text-center">
       <v-btn v-for="(item, index) in getPagination.pages" :key="index" color="white" small class="pa-0 mr-2" width="25" @click="bugsSearch(item.index)">
         {{item.index}}
       </v-btn>
@@ -58,87 +60,77 @@
 
 <script>
 import { mdiYoutube, mdiDatabaseSearch } from '@mdi/js';
-import { mapGetters, mapActions } from 'vuex';
+import { ref, defineComponent, computed } from '@vue/composition-api';
+import { useStore } from '@/store/index';
+import { useRouter } from '@/router/index';
 
-export default {
+export default defineComponent({
   name: 'BugsSearch',
-  data () {
-    return {
-      songName: '',
-      headers: [
-        { text: '', value: '' },
-        { text: '노래', value: 'songName' },
-        { text: '가수', value: 'artistName' },
-        { text: '앨범', value: 'albumName' },
-        { text: '', value: '' }
-      ],
-      items: {
-        songList: [],
-        pageList: []
-      },
-      pagination: {
-        selectedPage: 1,
-        startIndex: 1,
-        pageOffset: 10
-      },
-      icons: {
-        mdiYoutube: mdiYoutube,
-        databaseSearch: mdiDatabaseSearch
-      },
-      searchType: [
-        { text: '곡명', value: 'TRACK_ONLY' },
-        { text: '앨범', value: 'ALBUM_ONLY' },
-        { text: '가수', value: 'ARTIST_ONLY' }
-      ],
-      selectedSearchType: 'ARTIST_TRACK_ALBUM',
-      isLoading: false
-    };
-  },
-  computed: {
-    ...mapGetters({
-      getBugsSearchParameter: 'getBugsSearchParameter',
-      getPagination: 'getPagination',
-      getSearchedBugsItems: 'getSearchedBugsItems'
-    }),
-    bugsSearchValue: {
+  setup () {
+    const { dispatch, getters } = useStore();
+    const router = useRouter();
+    const songName = ref('');
+    const headers = ref();
+    const pagination = ref({
+      selectedPage: 1,
+      startIndex: 1,
+      pageOffset: 10
+    });
+    const icons = ref({
+      mdiYoutube,
+      mdiDatabaseSearch
+    });
+    const searchType = ref([
+      { text: '곡명', value: 'TRACK_ONLY' },
+      { text: '앨범', value: 'ALBUM_ONLY' },
+      { text: '가수', value: 'ARTIST_ONLY' }
+    ]);
+    let isLoading = ref(false);
+    const bugsSearchValue = computed({
       get () {
-        return this.getBugsSearchParameter.searchValue;
+        return getters.getBugsSearchParameter.searchValue;
       },
       set (value) {
-        this.setBugsSearchValue(value);
+        dispatch('setBugsSearchValue', value);
       }
-    },
-    bugSearchType: {
+    });
+    const bugSearchType = computed({
       get () {
-        return this.getBugsSearchParameter.searchType;
+        return getters.getBugsSearchParameter.searchType;
       },
-      set (searchType) {
-        this.setBugsSearchType(searchType);
+      set (value) {
+        dispatch('setBugsSearchType', value);
       }
-    }
-  },
-  methods: {
-    ...mapActions({
-      setBugsSearchValue: 'setBugsSearchValue',
-      setBugsSearchType: 'setBugsSearchType',
-      searchBugsMusic: 'searchBugsMusic'
-    }),
-    async bugsSearch (page = 1) {
-      this.isLoading = true;
-      await this.searchBugsMusic({
-        songName: this.bugsSearchValue,
-        searchType: this.selectedSearchType,
+    });
+    const getSearchedBugsItems = getters.getSearchedBugsItems;
+    const bugsSearch = async (page = 1) => {
+      isLoading = true;
+      await dispatch('searchBugsMusic', {
+        songName: bugsSearchValue.value,
+        searchType: bugSearchType.value,
         page
       });
-      console.log(this.getSearchedBugsItems);
-      this.isLoading = false;
-    },
-    async openYoutubeWindow (musicId) {
-      console.log(musicId);
-      await this.$router.push({ name: 'youtubeSearch', query: { bugsId: musicId } });
-    }
+      isLoading = false;
+    };
+    const openYoutubeWindow = async (musicId) => {
+      await router.push({ name: 'youtubeSearch', query: { bugsId: musicId } });
+    };
+    return {
+      songName,
+      headers,
+      pagination,
+      icons,
+      searchType,
+      isLoading,
+      bugsSearchValue,
+      bugSearchType,
+      getSearchedBugsItems,
+      getPagination: getters.getPagination,
+      bugsSearch,
+      openYoutubeWindow
+    };
   }
-};
+});
 </script>
 
 <style scoped>

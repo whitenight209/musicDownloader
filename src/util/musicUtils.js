@@ -14,7 +14,7 @@ export const writeMetaData = (musicFilePath, title, artist, album, imageData, ly
       description: ''
     }).setFrame('USLT', {
       description: '',
-      lyrics: lyrics,
+      lyrics: lyrics || '',
       language: 'eng'
     });
   writer.addTag();

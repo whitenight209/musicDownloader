@@ -5,12 +5,12 @@
       <v-btn icon @click="openFileChooser">
         <v-icon>{{icons.mdiFolderOpen}}</v-icon>
       </v-btn>
-      <div class="d-inline-flex item-text">{{getDownloadPath}}</div>
+      <div class="d-inline-flex item-text">{{downloadPath}}</div>
     </div>
     <v-data-table
       :items="storedMusicList"
       :headers="headers"
-      :items-per-page="offset"
+      :items-per-page="itemPerPage"
       hide-default-footer
       show-select
       v-model="selectedItems"
@@ -43,117 +43,113 @@
         </tr>
       </template>
     </v-data-table>
-    <div style="width: 50px">
+    <div class="text-center">
+      <v-pagination
+        v-model="page"
+        :length="totalCount"
+      ></v-pagination>
     </div>
   </div>
 </template>
 
 <script>
+import { ref, defineComponent, computed, onMounted, onUnmounted, watch } from '@vue/composition-api';
+import { useStore } from '@/store/index';
 import Event from '@/Event';
-import { mapGetters, mapActions } from 'vuex';
 import { mdiBriefcaseDownloadOutline, mdiDeleteCircle, mdiFolderOpen } from '@mdi/js';
 
 const { ipcRenderer } = window.require('electron');
 
-export default {
+export default defineComponent({
   name: 'StoredMusic',
-  created () {
-    ipcRenderer.on(Event.EVENT_REFRESH_ITEMS, this.refreshMusic);
-    ipcRenderer.on(Event.EVENT_SELECT_MUSIC, this.setMusicList);
-    // this.initAppBar();
-    this.setAppBarFlag(true);
-  },
-  mounted () {
-    console.log('mounted');
-    ipcRenderer.send(Event.EVENT_SELECT_MUSIC, {});
-  },
-  beforeDestroy () {
-    ipcRenderer.removeAllListeners(Event.EVENT_SELECT_MUSIC);
-    ipcRenderer.removeAllListeners(Event.EVENT_REFRESH_ITEMS);
-    this.setAppBarFlag(false);
-    console.log('destroy');
-  },
-  computed: {
-    ...mapGetters({
-      getDownloadPath: 'downloadPath',
-      processList: 'processList',
-      storedMusicList: 'getStoredMusicList'
-    })
-  },
-  data () {
-    return {
-      headers: [
-        { text: 'id', value: 'id', sortable: false },
-        { text: '', value: 'albumCoverImage', sortable: false, type: 'image', width: '50px' },
-        { text: 'songName', value: 'name', align: 'center', sortable: false },
-        { text: 'artist', value: 'artistName', sortable: false },
-        { text: 'album', value: 'albumName', sortable: false },
-        { text: '', value: '', sortable: false },
-        { text: 'percentage', value: 'percentage', type: 'percentage', sortable: false },
-        {
-          text: 'download',
-          value: 'id',
-          type: 'button',
-          cback: (id) => this.downloadSong(id),
-          icon: mdiBriefcaseDownloadOutline
-        },
-        { text: 'delete', value: 'id', type: 'button', cback: (id) => this.deleteMusic(id), icon: mdiDeleteCircle }
-      ],
-      musicList: [],
-      totalCount: 0,
-      offset: 50,
-      currentPage: 1,
-      selectedItems: [],
-      icons: {
-        mdiFolderOpen
-      }
+  setup () {
+    const page = ref(1);
+    const itemPerPage = ref(20);
+    const { dispatch, state } = useStore();
+    const openFileChooser = () => {
+      ipcRenderer.send(Event.OPEN_FILE_DIALOG);
     };
-  },
-  watch: {
-    storedMusicList (data) {
-      console.log(data);
-      console.log('storedMusicList updated');
-    }
-  },
-  methods: {
-    ...mapActions(
+    const deleteMusic = (id) => {
+      ipcRenderer.send(Event.DELETE_STORED_MUSIC, id);
+    };
+    const refreshMusic = () => {
+      ipcRenderer.send(Event.EVENT_SELECT_MUSIC, {});
+    };
+    const setMusicList = async (e, data) => {
+      await dispatch('setStoredMusicList', data);
+    };
+    const downloadPath = computed(() => {
+      return state.downloadPath;
+    });
+    const processList = computed(() => {
+      return state.processList;
+    });
+    const storedMusicList = computed(() => {
+      return state.storedMusicList;
+    });
+    const totalCount = computed(() => {
+      return parseInt(state.storedMusicTotalCount / itemPerPage.value) + (parseInt(state.storedMusicTotalCount % itemPerPage.value) > 0 ? 1 : 0);
+    });
+    const headers = [
+      { text: 'id', value: 'id', sortable: false },
+      { text: '', value: 'albumCoverImage', sortable: false, type: 'image', width: '50px' },
+      { text: 'songName', value: 'name', align: 'center', sortable: false },
+      { text: 'artist', value: 'artistName', sortable: false },
+      { text: 'album', value: 'albumName', sortable: false },
+      { text: '', value: '', sortable: false },
+      { text: 'percentage', value: 'percentage', type: 'percentage', sortable: false },
       {
-        setAppBarFlag: 'setAppBarFlag',
-        setAppBar: 'setAppBar',
-        addDownload: 'addDownload',
-        addDownloads: 'addDownloads',
-        setStoredMusicList: 'setStoredMusicList'
-      }
-    ),
-    downloadSong (id) {
-      console.log(id);
-      const downloadPath = this.getDownloadPath;
+        text: 'download',
+        value: 'id',
+        type: 'button',
+        cback: (id) => downloadSong(id),
+        icon: mdiBriefcaseDownloadOutline
+      },
+      { text: 'delete', value: 'id', type: 'button', cback: (id) => deleteMusic(id), icon: mdiDeleteCircle }
+    ];
+    onMounted(() => {
+      dispatch('setAppBarFlag', true);
+      ipcRenderer.on(Event.EVENT_REFRESH_ITEMS, refreshMusic);
+      ipcRenderer.on(Event.EVENT_SELECT_MUSIC, setMusicList);
+      ipcRenderer.send(Event.EVENT_SELECT_MUSIC, {});
+    });
+    onUnmounted(() => {
+      dispatch('setAppBarFlag', false);
+      ipcRenderer.removeAllListeners(Event.EVENT_SELECT_MUSIC);
+      ipcRenderer.removeAllListeners(Event.EVENT_REFRESH_ITEMS);
+    });
+    const downloadSong = (id) => {
+      const downloadPath = state.downloadPath;
       if (!downloadPath) {
         alert('다운로드 경로를 설정해주세요.');
         return;
       }
       ipcRenderer.send(Event.DOWNLOAD_MUSIC, { id, downloadPath });
-      const selectedMusic = this.storedMusicList.filter(music => music.id === id)[0];
+      const selectedMusic = state.storedMusicList.filter(music => music.id === id)[0];
       selectedMusic.progress = 0;
-      this.addDownload({ id, percentage: 0 });
-    },
-    setMusicList (e, data) {
-      this.setStoredMusicList(data);
-    },
-    deleteMusic (id) {
-      ipcRenderer.send(Event.DELETE_STORED_MUSIC, id);
-    },
-    refreshMusic () {
-      ipcRenderer.send(Event.EVENT_SELECT_MUSIC, {});
-    },
-    onCheckBoxClick (music) {
-      console.log(music);
-    },
-    openFileChooser () {
-      ipcRenderer.send(Event.OPEN_FILE_DIALOG);
-    }
+    };
+    watch(page, (value) => {
+      ipcRenderer.send(Event.EVENT_SELECT_MUSIC, { page: value, offset: itemPerPage.value });
+      console.log(page.value);
+      console.log('page changed');
+    });
+    return {
+      headers,
+      itemPerPage,
+      currentPage: ref(1),
+      selectedItems: ref([]),
+      page,
+      icons: {
+        mdiFolderOpen
+      },
+      openFileChooser,
+      downloadPath,
+      processList,
+      storedMusicList,
+      totalCount
+    };
   }
-};
+});
 </script>
 
 <style scoped>
