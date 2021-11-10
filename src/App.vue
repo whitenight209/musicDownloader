@@ -2,8 +2,18 @@
   <!-- App.vue -->
 
   <v-app>
+    <div class="top float-right" style="z-index: 5;position: absolute; right: 10px; bottom: 10px">
+      <v-alert
+        :key="index"
+        v-for="(alert, index) in alerts"
+        border="left"
+        dark
+        :type="alert.alertType"
+      >
+        {{alert.message}}
+      </v-alert>
+    </div>
     <v-navigation-drawer
-      :update:mini-variant="eventTest"
       app
       permanent
       fixed
@@ -68,9 +78,9 @@
 import { mdiYoutube, mdiFolderMusic, mdiPoll, mdiCog } from '@mdi/js';
 import BugsIcon from '@/components/BugsIcon';
 import Event from '@/Event';
-import { mapGetters, mapActions } from 'vuex';
-import { provideStore } from '@/store/index';
-import { provideRouter } from '@/router/index';
+import { provideStore, useStore } from '@/store/index';
+import { provideRouter, useRouter } from '@/router/index';
+import { onMounted, ref } from '@vue/composition-api';
 const { ipcRenderer } = window.require('electron');
 export default {
   components: {
@@ -80,66 +90,61 @@ export default {
   setup () {
     provideStore();
     provideRouter();
-  },
-  created () {
-    ipcRenderer.on(Event.OPEN_FILE_DIALOG, (e, downloadPath) => {
-      this.setDownloadPath(downloadPath);
+    const { currentRoute } = useRouter();
+    const { state, dispatch } = useStore();
+    const mini = ref(true);
+    const drawer = ref(true);
+    const alerts = ref([]);
+    const items = [
+      { title: 'top100', icon: mdiPoll, link: '/', color: 'blue' },
+      { title: 'Bugs 검색', type: 'component', component: BugsIcon, link: '/bugs/search' },
+      { title: 'Youtube 검색', color: 'red', icon: mdiYoutube, link: '/youtube/search' },
+      { title: '저장된 노래', color: 'purple', icon: mdiFolderMusic, link: '/stored' },
+      { title: '설정', icon: mdiCog, link: '/settings' }
+    ];
+    const setAppbarFlag = (flag) => {
+      state.useAppBar = flag;
+    };
+    const setMenuFlag = (menuFlag) => {
+      state.useMenu = menuFlag;
+    };
+    const setDownloadPath = (downloadPath) => {
+      state.downloadPath = downloadPath;
+    };
+    const setConfig = (config) => {
+      state.config = config;
+    };
+    const updateProgress = (dataForUpdate) => {
+      dispatch('updateProgress', dataForUpdate);
+    };
+    onMounted(() => {
+      ipcRenderer.on(Event.OPEN_FILE_DIALOG, (e, downloadPath) => {
+        setDownloadPath(downloadPath);
+      });
+      ipcRenderer.on(Event.INIT_CONFIG, (e, config) => {
+        console.log(config);
+        setConfig(config);
+      });
+      ipcRenderer.on(Event.EVENT_SEND_DOWNLOAD_SONG_PROGRESS, (e, process) => {
+        updateProgress(process);
+      });
+      ipcRenderer.on(Event.EVENT_GLOBAL_ALERT, (e, alert) => {
+        console.log('event received');
+        console.log(alert);
+        alerts.value.push(alert);
+        setTimeout(() => {
+          alerts.value = alerts.value.filter(i => i.id !== alert.id);
+        }, 2000);
+      });
+      ipcRenderer.send(Event.INIT_CONFIG);
+      currentRoute.query.appBar === 'false' ? setAppbarFlag(false) : setAppbarFlag(true);
+      currentRoute.query.menu === 'false' ? setMenuFlag(false) : setMenuFlag(true);
     });
-    ipcRenderer.on(Event.INIT_CONFIG, (e, config) => {
-      console.log(config);
-      this.setConfig(config);
-    });
-    ipcRenderer.on(Event.EVENT_SEND_DOWNLOAD_SONG_PROGRESS, (e, process) => {
-      this.updateProcess(process);
-    });
-    ipcRenderer.send(Event.INIT_CONFIG);
-    this.$route.query.appBar === 'true' ? this.setAppBarFlag(true) : this.setAppBarFlag(false);
-    this.$route.query.menu === 'false' ? this.setMenuFlag(false) : this.setMenuFlag(true);
-  },
-  computed: {
-    ...mapGetters(
-      {
-        useAppBarFlag: 'useAppBarFlag',
-        useMenu: 'getMenuFlag',
-        appBar: 'getAppBar'
-      }
-    )
-  },
-  watch: {
-    drawer (value) {
-      console.log(value);
-    }
-  },
-  methods: {
-    ...mapActions(
-      {
-        setDownloadPath: 'setDownloadPath',
-        setAppBarFlag: 'setAppBarFlag',
-        setMenuFlag: 'setMenuFlag',
-        setConfig: 'setConfig',
-        updateProcess: 'updateProcess'
-      }
-    ),
-    eventTest (e) {
-      console.log(e);
-    }
-  },
-  data () {
     return {
-      mini: true,
-      drawer: true,
-      items: [
-        {
-          title: 'top100',
-          icon: mdiPoll,
-          link: '/',
-          color: 'blue'
-        },
-        { title: 'Bugs 검색', type: 'component', component: BugsIcon, link: '/bugs/search' },
-        { title: 'Youtube 검색', color: 'red', icon: mdiYoutube, link: '/youtube/search' },
-        { title: '저장된 노래', color: 'purple', icon: mdiFolderMusic, link: '/stored' },
-        { title: '설정', icon: mdiCog, link: '/settings' }
-      ]
+      items,
+      mini,
+      drawer,
+      alerts
     };
   }
 };

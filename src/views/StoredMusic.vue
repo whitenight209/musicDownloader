@@ -1,11 +1,23 @@
 <template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
   <div>
-    <div>
-      <div class="d-inline-flex item-text">다운로드 경로 :</div>
-      <v-btn icon @click="openFileChooser">
-        <v-icon>{{icons.mdiFolderOpen}}</v-icon>
-      </v-btn>
-      <div class="d-inline-flex item-text">{{downloadPath}}</div>
+    <div class="d-flex">
+      <div class="d-flex mr-auto">
+        <div class="item-text align-self-center">다운로드 경로 :</div>
+        <v-btn icon @click="openFileChooser">
+          <v-icon>{{icons.mdiFolderOpen}}</v-icon>
+        </v-btn>
+        <div class="item-text">{{downloadPath}}</div>
+      </div>
+      <div class="d-flex">
+        <div class="item-text align-self-center">
+          <v-btn icon @click="importMusic">
+            <v-icon>{{icons.mdiImport}}</v-icon>
+          </v-btn>
+          <v-btn icon @click="exportMusic([])">
+            <v-icon>{{icons.mdiExport}}</v-icon>
+          </v-btn>
+        </div>
+      </div>
     </div>
     <v-data-table
       :items="storedMusicList"
@@ -56,8 +68,7 @@
 import { ref, defineComponent, computed, onMounted, onUnmounted, watch } from '@vue/composition-api';
 import { useStore } from '@/store/index';
 import Event from '@/Event';
-import { mdiBriefcaseDownloadOutline, mdiDeleteCircle, mdiFolderOpen } from '@mdi/js';
-
+import { mdiBriefcaseDownloadOutline, mdiDeleteCircle, mdiFolderOpen, mdiImport, mdiExport } from '@mdi/js';
 const { ipcRenderer } = window.require('electron');
 
 export default defineComponent({
@@ -128,6 +139,12 @@ export default defineComponent({
       const selectedMusic = state.storedMusicList.filter(music => music.id === id)[0];
       selectedMusic.progress = 0;
     };
+    const exportMusic = (musics = []) => {
+      ipcRenderer.send(Event.EVENT_EXPORT_MUSIC, musics);
+    };
+    const importMusic = () => {
+      ipcRenderer.send(Event.EVENT_IMPORT_MUSIC, null);
+    };
     watch(page, (value) => {
       ipcRenderer.send(Event.EVENT_SELECT_MUSIC, { page: value, offset: itemPerPage.value });
       console.log(page.value);
@@ -140,13 +157,17 @@ export default defineComponent({
       selectedItems: ref([]),
       page,
       icons: {
-        mdiFolderOpen
+        mdiFolderOpen,
+        mdiExport,
+        mdiImport
       },
       openFileChooser,
       downloadPath,
       processList,
       storedMusicList,
-      totalCount
+      totalCount,
+      exportMusic,
+      importMusic
     };
   }
 });

@@ -1,4 +1,5 @@
 const insertMusic = (db, { bugsId, songName, youtubeId, artistName, albumName, albumCoverImage, albumId, duration, lyrics }) => {
+  console.log(`insert music ${bugsId}, ${songName}, ${youtubeId}, ${artistName}`);
   return db('music').insert({ bugsId, name: songName, youtubeId, artistName, albumName, albumCoverImage, albumId, duration, lyrics });
 };
 const selectMusic = (db, { page = 1, offset = 50 }) => {
@@ -52,10 +53,24 @@ export const getSettingById = async (db, settingId) => {
   return result[0];
 };
 export const upsertDownloadPath = async (db, downloadPath) => {
-
-    //insert
 };
+
+export const importMusic = async (db, musics) => {
+  for (const music of musics) {
+    const result = await db('music').count('id', { as: 'count' }).where({ id: music.id });
+    const musicAlreadyExists = result[0].count > 0;
+    if (musicAlreadyExists) {
+      console.log('delete already exists music and insert new music data');
+    } else {
+      console.log('imported music insert into database');
+      music.songName = music.name;
+      await insertMusic(db, { ...music });
+    }
+  }
+};
+
 export default {
+  importMusic,
   insertMusic,
   selectMusic,
   selectMusicById,

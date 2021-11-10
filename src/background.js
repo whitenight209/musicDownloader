@@ -4,6 +4,7 @@ import { app, protocol, BrowserWindow, ipcMain, dialog } from 'electron';
 import knex from 'knex';
 import Event from '@/Event';
 import Logger from '@/Logger';
+import AlertType from '@/AlertType';
 import database from '@/util/database';
 import { downloadYoutube } from '@/util/youtube';
 import { getImage } from '@/util/api';
@@ -13,6 +14,7 @@ import Util from '@/Util';
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib';
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer';
 import path from 'path';
+import FileFilter from '@/FileFilter';
 const isDevelopment = process.env.NODE_ENV !== 'production';
 const isBuild = process.env.NODE_ENV === 'production';
 app.commandLine.appendSwitch('disable-web-security');
@@ -21,6 +23,15 @@ app.commandLine.appendSwitch('disable-web-security');
 // be closed automatically when the JavaScript object is garbage collected.
 let win;
 let youtubeWindow;
+
+const alertBuilder = () => {
+  let alertId = 1;
+  return (alertType, message) => {
+    return { id: alertId++, alertType, message };
+  };
+};
+
+const generateAlert = alertBuilder();
 
 const registerYoutubeApiKey = () => {
   const youtubeKeyFilePath = getResourcePath('conf/config.json');
@@ -168,11 +179,16 @@ const saveMusicFileIntoDatabase = async (mp3FilePath, musicId) => {
   }
 };
 const exportMusicData = (db) => {
-  const musics = database.selectAllMusic(db);
-  const exportResultData = {};
-  console.log(musics);
+  return database.selectAllMusic(db);
 };
-
+const writeJsonDataToFile = (path, data) => {
+  fs.writeFile(path, JSON.stringify(data), (err) => {
+    return new Promise((resolve, reject) => {
+      if (err) reject(new Error(err));
+      resolve();
+    });
+  });
+};
 ipcMain.on(Event.INIT_CONFIG, () => {
   win.send(Event.INIT_CONFIG, config);
 });
@@ -197,6 +213,42 @@ ipcMain.on(Event.EVENT_UPDATE_SETTING, async (e, setting) => {
     logger.debug(e, '');
   }
 });
+ipcMain.on(Event.EVENT_EXPORT_MUSIC, (e, musics) => {
+  openFileSaveDialog().then(async path => {
+    return { path, musics: await exportMusicData(db) };
+  }).then(({ path, musics }) => writeJsonDataToFile(path, musics))
+    .then(() => {
+      const alert = generateAlert(AlertType.SUCCESS, 'data export success!');
+      logger.debug(`alert ${alert.id} send`);
+      win.send(Event.EVENT_GLOBAL_ALERT, alert);
+    }).catch(err => {
+      logger.debug(err);
+      const errorAlert = generateAlert(AlertType.ERROR, err.message);
+      win.send(Event.EVENT_GLOBAL_ALERT, errorAlert);
+    });
+  // exportMusicData(db);
+});
+ipcMain.on(Event.EVENT_IMPORT_MUSIC, () => {
+  openFileOpenDialog().then(({ filePaths }) => {
+    return filePaths.pop();
+  }).then(filePath => {
+    return fs.readFileSync(filePath, {});
+  }).then(buffer => {
+    const musics = JSON.parse(buffer.toString());
+    const result = importMusic(musics);
+    logger.debug(result);
+    const alert = generateAlert(AlertType.SUCCESS, 'data import success!');
+    win.send(Event.EVENT_GLOBAL_ALERT, alert);
+  }).catch(err => {
+    logger.debug(err);
+  });
+});
+
+const importMusic = async (musics) => {
+  const result = await database.importMusic(db, musics);
+  return result;
+};
+
 const backupMusicDatabase = async (db, backupPath) => {
   const fileName = 'backup.json';
   const musicList = await database.selectAllMusic(db);
@@ -205,7 +257,19 @@ const backupMusicDatabase = async (db, backupPath) => {
     logger.debug('The file has been saved!');
   });
 };
-
+const openFileSaveDialog = () => {
+  return dialog.showSaveDialog(win, { message: 'select export file', filters: [FileFilter.json] })
+    .then(({ canceled, filePath }) => {
+      return new Promise((resolve, reject) => {
+        if (canceled) reject(new Error('file select canceled'));
+        logger.debug(`dialog choose directory ${filePath}`);
+        resolve(filePath);
+      });
+    });
+};
+const openFileOpenDialog = () => {
+  return dialog.showOpenDialog(win, { filters:[FileFilter.json], properties: ['openFile'] });
+};
 const createYoutubeWindow = async (musicId) => {
   if (!youtubeWindow) {
     youtubeWindow = new BrowserWindow({
