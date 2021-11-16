@@ -115,7 +115,7 @@ export default {
       state.config = config;
     };
     const updateProgress = (dataForUpdate) => {
-      dispatch('updateProgress', dataForUpdate);
+      dispatch('updateProcess', dataForUpdate);
     };
     onMounted(() => {
       ipcRenderer.on(Event.OPEN_FILE_DIALOG, (e, downloadPath) => {
