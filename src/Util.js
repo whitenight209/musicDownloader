@@ -14,7 +14,7 @@ export const compress = (data) => {
   });
 };
 export const generateMp3FileName = (artistName, musicName) => {
-  return `${artistName.replace(' ', '_')}_${musicName.replace(' ', '_')}.mp3`;
+  return `${artistName.replace('/', '|').replace(' ', '_')}_${musicName.replace('/', '|').replace(' ', '_')}.mp3`;
 };
 
 export default {
