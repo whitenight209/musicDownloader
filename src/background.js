@@ -226,7 +226,6 @@ ipcMain.on(Event.EVENT_EXPORT_MUSIC, (e, musics) => {
       const errorAlert = generateAlert(AlertType.ERROR, err.message);
       win.send(Event.EVENT_GLOBAL_ALERT, errorAlert);
     });
-  // exportMusicData(db);
 });
 ipcMain.on(Event.EVENT_IMPORT_MUSIC, () => {
   openFileOpenDialog().then(({ filePaths }) => {
@@ -268,7 +267,7 @@ const openFileSaveDialog = () => {
     });
 };
 const openFileOpenDialog = () => {
-  return dialog.showOpenDialog(win, { filters:[FileFilter.json], properties: ['openFile'] });
+  return dialog.showOpenDialog(win, { filters: [FileFilter.json], properties: ['openFile'] });
 };
 const createYoutubeWindow = async (musicId) => {
   if (!youtubeWindow) {

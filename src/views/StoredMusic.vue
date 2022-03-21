@@ -6,7 +6,15 @@
         <v-btn icon @click="openFileChooser">
           <v-icon>{{icons.mdiFolderOpen}}</v-icon>
         </v-btn>
-        <div class="item-text">{{downloadPath}}</div>
+        <div class="item-text mt-2">{{downloadPath}}</div>
+      </div>
+      <div class="d-flex mr-auto mt-2">
+        <v-btn depressed outlined x-small>
+          전체 선택
+        </v-btn>
+        <v-btn depressed outlined x-small class="ml-1">
+          전체 다운로드
+        </v-btn>
       </div>
       <div class="d-flex">
         <div class="item-text align-self-center">
@@ -27,7 +35,7 @@
       show-select
       v-model="selectedItems"
     >
-      <template v-slot:item="{ item, headers, isSelected, select }">
+      <template v-slot:item="{ item, headers, isSelected, select}">
         <tr>
           <template v-for="(header, headerIndex) in headers">
             <td :key="headerIndex + 'check'" v-if='header.value === "data-table-select"'>
@@ -76,6 +84,7 @@ export default defineComponent({
   setup () {
     const page = ref(1);
     const itemPerPage = ref(20);
+    const selectedItems = ref([]);
     const { dispatch, state } = useStore();
     const openFileChooser = () => {
       ipcRenderer.send(Event.OPEN_FILE_DIALOG);
@@ -153,8 +162,8 @@ export default defineComponent({
     return {
       headers,
       itemPerPage,
+      selectedItems,
       currentPage: ref(1),
-      selectedItems: ref([]),
       page,
       icons: {
         mdiFolderOpen,

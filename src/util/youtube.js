@@ -42,7 +42,10 @@ export const downloadYoutube = (callBack, musicId, libPath, youtubeId, duration,
   });
 };
 const makeCommand = (libPath, youtubeId, duration, downloadPath, fileName) => {
-  const command = `${libPath}/youtube-dl`;
+  let command = `${libPath}/yt-dlp`;
+  if (process.platform === 'win32') {
+    command += '.exe';
+  }
   const args = [];
   args.push('--extract-audio');
   args.push('--audio-format');
