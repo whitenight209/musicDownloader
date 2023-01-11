@@ -23,7 +23,7 @@
     "chai-as-promised": "^7.1.1",
     "cheerio": "^1.0.0-rc.3",
     "core-js": "^3.6.5",
-    "knex": "^0.21.1",
+    "knex": "^2.4.0",
     "roboto-fontface": "*",
     "sqlite3": "5.0.0",
     "vue": "^2.6.11",
